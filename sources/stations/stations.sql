@@ -1,1 +1,1 @@
-create or replace table station_01 as select * from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=2025/month=03/day=27/aggregated_20250327.parquet')
+select * from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=2025/month=03/day=27/aggregated_20250327.parquet')

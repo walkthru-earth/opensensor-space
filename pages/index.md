@@ -79,7 +79,7 @@ Weather station is located at coordinates: 30.0626, 31.4916
     round(min(pressure), 2) as min_pressure,
     round(max(pressure), 2) as max_pressure,
     round(avg(pressure), 2) as avg_pressure
-  from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=${inputs.year.value}/month=${inputs.month.value}/day=${inputs.day.value}/aggregated_${inputs.year.value}${inputs.month.value}${inputs.day.value}.parquet')
+  from stations
 ```
 
 <DataTable
@@ -91,17 +91,15 @@ Weather station is located at coordinates: 30.0626, 31.4916
 
 ```sql temp_data
   select
-    temperature,
-    count(*) as count
-  from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=${inputs.year.value}/month=${inputs.month.value}/day=${inputs.day.value}/aggregated_${inputs.year.value}${inputs.month.value}${inputs.day.value}.parquet')
-  group by temperature
-  order by temperature
+    timestamp,
+    temperature
+  from stations
 ```
 
-<BarChart
+<LineChart
   data={temp_data}
-  x=temperature
-  y=count
+  x=timestamp
+  y=temperature
   title="Temperature Distribution"
   xAxisTitle="Temperature (°C)"
   yAxisTitle="Count"
@@ -111,17 +109,15 @@ Weather station is located at coordinates: 30.0626, 31.4916
 
 ```sql humidity_data
   select
-    humidity,
-    count(*) as count
-  from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=${inputs.year.value}/month=${inputs.month.value}/day=${inputs.day.value}/aggregated_${inputs.year.value}${inputs.month.value}${inputs.day.value}.parquet')
-  group by humidity
-  order by humidity
+    timestamp,
+    humidity
+  from stations
 ```
 
-<BarChart
+<LineChart
   data={humidity_data}
-  x=humidity
-  y=count
+  x=timestamp
+  y=humidity
   title="Humidity Distribution"
   xAxisTitle="Humidity (%)"
   yAxisTitle="Count"
@@ -133,8 +129,7 @@ Weather station is located at coordinates: 30.0626, 31.4916
   select 
     temperature,
     humidity
-  from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=${inputs.year.value}/month=${inputs.month.value}/day=${inputs.day.value}/aggregated_${inputs.year.value}${inputs.month.value}${inputs.day.value}.parquet')
-  limit 1000
+  from stations
 ```
 
 <ScatterPlot
@@ -154,8 +149,7 @@ Weather station is located at coordinates: 30.0626, 31.4916
     temperature,
     humidity,
     pressure
-  from read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/archive_daily/station=01/year=${inputs.year.value}/month=${inputs.month.value}/day=${inputs.day.value}/aggregated_${inputs.year.value}${inputs.month.value}${inputs.day.value}.parquet')
-  limit 50
+  from stations
 ```
 
 <DataTable 
