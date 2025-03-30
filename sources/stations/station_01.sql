@@ -1,0 +1,1 @@
+select * from read_parquet('s3://us-west-2.opendata.source.coop/youssef-harby/weather-station-realtime-parquet/1m_avg_daily/station=01/**/*.parquet')
