@@ -13,7 +13,6 @@ SELECT
   AVG(temperature) as avg_temp,
   MIN(temperature) as min_temp,
   MAX(temperature) as max_temp,
-  AVG(raw_temperature) as avg_raw_temp,
   
   -- Humidity metrics
   AVG(humidity) as avg_humidity,
@@ -84,14 +83,6 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
   title="Maximum Temperature (°C)"
   fmt="num1"
   description="Highest recorded temperature. Standard range: 15°C to 30°C."
-/>
-
-<BigValue 
-  data={station_data} 
-  value=avg_raw_temp
-  title="Average Raw Temperature (°C)"
-  fmt="num1"
-  description="Average raw temperature from sensor before calibration. Raw temperature readings are typically higher than calibrated readings due to sensor self-heating."
 />
 
 ## Air Quality Metrics
