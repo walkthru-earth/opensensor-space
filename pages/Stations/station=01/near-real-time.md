@@ -1,6 +1,7 @@
 ---
 title: Near Real-Time Weather Data
 ---
+<LastRefreshed/>
 # Station 01 - Near Real-Time Weather Data
 
 <small>*All metrics represent averages from the last 5 minutes of data collection at this station.*</small>

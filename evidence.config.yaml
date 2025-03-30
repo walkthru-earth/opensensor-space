@@ -2,8 +2,8 @@ appearance:
   default: system
   switcher: true
 
-deployment:
-  basePath: /my-weather-station
+# deployment:
+#   basePath: /my-weather-station
 
 theme:
   colorPalettes:
