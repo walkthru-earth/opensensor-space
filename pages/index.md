@@ -53,6 +53,11 @@ The Enviro+ sensor pack collects a wealth of environmental data:
 
 I'm currently waiting for a replacement for the combined Particulate Matter sensors (PM1.0, PM2.5, and PM10) to complete the setup.
 
+You can find more information about the Enviro+ here:
+- [Enviro+ Product Page](https://shop.pimoroni.com/products/enviro?variant=31155658457171)
+- [Getting Started with Enviro+](https://learn.pimoroni.com/article/getting-started-with-enviro-plus)
+- [Enviro+ Python Library](https://github.com/pimoroni/enviroplus-python)
+
 ## Why This Matters
 
 This project demonstrates how edge devices can participate in cloud-native architectures without complex infrastructure. By storing data in open formats like Parquet and using client-side processing with tools like DuckDB and Evidence, we can build sophisticated monitoring systems that are:
