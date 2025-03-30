@@ -1,3 +1,9 @@
+# Station 01 - Near Real-Time Weather Data
+
+<small>*All metrics represent averages from the last 5 minutes of data collection at this station.*</small>
+
+## Key Metrics
+
 ```sql temperature_stats
 SELECT 
   AVG(temperature) as avg_temp,
@@ -7,51 +13,6 @@ SELECT
 FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
 ```
 
-```sql humidity_stats
-SELECT 
-  AVG(humidity) as avg_humidity,
-  MIN(humidity) as min_humidity,
-  MAX(humidity) as max_humidity
-FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
-```
-
-```sql pressure_stats
-SELECT 
-  AVG(pressure) as avg_pressure,
-  MIN(pressure) as min_pressure,
-  MAX(pressure) as max_pressure
-FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
-```
-
-```sql air_quality_stats
-SELECT 
-  AVG(oxidised) as avg_oxidised,
-  MIN(oxidised) as min_oxidised,
-  MAX(oxidised) as max_oxidised,
-  AVG(reducing) as avg_reducing,
-  MIN(reducing) as min_reducing,
-  MAX(reducing) as max_reducing,
-  AVG(nh3) as avg_nh3,
-  MIN(nh3) as min_nh3,
-  MAX(nh3) as max_nh3
-FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
-```
-
-```sql light_stats
-SELECT 
-  AVG(lux) as avg_lux,
-  MAX(lux) as max_lux,
-  AVG(proximity) as avg_proximity,
-  MAX(proximity) as max_proximity
-FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
-```
-
-# Station 01 - Near Real-Time Weather Data
-
-<small>*All metrics represent averages from the last 5 minutes of data collection at this station.*</small>
-
-## Key Metrics
-
 <BigValue 
   data={temperature_stats} 
   value=avg_temp
@@ -60,6 +21,14 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
   description="Average ambient temperature measured in degrees Celsius. Standard range: 15°C to 30°C. Optimal indoor temperature is 20-25°C."
 />
 
+```sql humidity_stats
+SELECT 
+  AVG(humidity) as avg_humidity,
+  MIN(humidity) as min_humidity,
+  MAX(humidity) as max_humidity
+FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
+```
+
 <BigValue 
   data={humidity_stats} 
   value=avg_humidity
@@ -67,6 +36,14 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
   fmt="num1"
   description="Relative humidity percentage in the air. Standard range: 30% to 60%. Optimal indoor humidity is 40-50%."
 />
+
+```sql pressure_stats
+SELECT 
+  AVG(pressure) as avg_pressure,
+  MIN(pressure) as min_pressure,
+  MAX(pressure) as max_pressure
+FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
+```
 
 <BigValue 
   data={pressure_stats} 
@@ -77,6 +54,15 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
 />
 
 ## Temperature Metrics
+
+```sql temperature_stats
+SELECT 
+  AVG(temperature) as avg_temp,
+  MIN(temperature) as min_temp,
+  MAX(temperature) as max_temp,
+  AVG(raw_temperature) as avg_raw_temp
+FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
+```
 
 <BigValue 
   data={temperature_stats} 
@@ -104,6 +90,20 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
 
 ## Air Quality Metrics
 
+```sql air_quality_stats
+SELECT 
+  AVG(oxidised) as avg_oxidised,
+  MIN(oxidised) as min_oxidised,
+  MAX(oxidised) as max_oxidised,
+  AVG(reducing) as avg_reducing,
+  MIN(reducing) as min_reducing,
+  MAX(reducing) as max_reducing,
+  AVG(nh3) as avg_nh3,
+  MIN(nh3) as min_nh3,
+  MAX(nh3) as max_nh3
+FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
+```
+
 <BigValue 
   data={air_quality_stats} 
   value=avg_oxidised
@@ -129,6 +129,15 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
 />
 
 ## Light Metrics
+
+```sql light_stats
+SELECT 
+  AVG(lux) as avg_lux,
+  MAX(lux) as max_lux,
+  AVG(proximity) as avg_proximity,
+  MAX(proximity) as max_proximity
+FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String(Math.floor(new Date().getUTCMinutes() / 10) * 10).padStart(2, '0')}.parquet')
+```
 
 <BigValue 
   data={light_stats} 
