@@ -82,6 +82,19 @@ ___
 </svg>
     </a>
 </div>
+
+<div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition">
+
+    ### [Particulate Matter (PM1.0, PM2.5, and PM10)](/Stations/station=01/particulate-matter/)
+    <a href="/Stations/station=01/particulate-matter/">
+
+<svg xmlns="http://www.w3.org/2000/svg" height="1em" fill="currentColor" viewBox="0 0 512 512">
+  <path
+    d="M 480 288 L 480 320 L 480 288 L 480 320 L 288 320 L 288 320 L 288 480 L 288 480 L 320 480 L 320 480 L 320 352 L 320 352 L 480 352 L 480 352 L 480 480 L 480 480 L 512 480 L 512 480 L 512 288 L 512 288 L 480 288 L 480 288 Z M 192 32 L 192 0 L 192 32 L 192 0 L 0 0 L 0 0 L 0 192 L 0 192 L 32 192 L 32 192 L 32 32 L 32 32 L 192 32 L 192 32 Z M 32 480 L 32 512 L 32 480 L 32 512 L 224 512 L 224 512 L 224 320 L 224 320 L 192 320 L 192 320 L 192 480 L 192 480 L 32 480 L 32 480 Z M 320 32 L 320 0 L 320 32 L 320 0 L 512 0 L 512 0 L 512 192 L 512 192 L 480 192 L 480 192 L 480 32 L 480 32 L 320 32 L 320 32 Z M 256 128 Q 230 129 211 147 Q 193 166 192 192 Q 193 218 211 237 Q 230 255 256 256 Q 282 255 301 237 Q 319 218 320 192 Q 319 166 301 147 Q 282 129 256 128 L 256 128 Z M 256 224 Q 239 223 227 211 Q 215 199 216 192 Q 215 175 227 163 Q 239 151 256 152 Q 273 151 285 163 Q 297 175 296 192 Q 297 199 285 211 Q 273 223 256 224 L 256 224 Z M 128 256 Q 102 257 83 275 Q 65 294 64 320 Q 65 346 83 365 Q 102 383 128 384 Q 154 383 173 365 Q 191 346 192 320 Q 191 294 173 275 Q 154 257 128 256 L 128 256 Z M 128 352 Q 111 351 99 339 Q 87 327 88 320 Q 87 303 99 291 Q 111 279 128 280 Q 145 279 157 291 Q 169 303 168 320 Q 169 327 157 339 Q 145 351 128 352 L 128 352 Z"
+  />
+</svg>
+</a>
+</div>
 </Grid>
 
 ## Traditional Way
@@ -128,8 +141,11 @@ The Enviro+ sensor pack collects a wealth of environmental data:
 - NH3 (ammonia)
 - Light levels (lux)
 - Proximity
+- Particulate Matter (PM1.0, PM2.5, and PM10)
 
-I'm currently waiting for a replacement for the combined Particulate Matter sensors (PM1.0, PM2.5, and PM10) to complete the setup.
+<Alert status="info">
+  <strong>Update (April 4, 2025):</strong> Particulate Matter sensor data is now available! Starting from <a href="https://source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=2025/month=04/day=04/data_0240.parquet">station=01/year=2025/month=04/day=04/data_0240.parquet</a>, all files include PM1.0, PM2.5, and PM10 measurements from the PMS5003 sensor, along with particle count data for different sizes.
+</Alert>
 
 You can find more information about the Enviro+ here:
 

@@ -41,7 +41,13 @@ SELECT
   AVG(lux) as avg_lux,
   MAX(lux) as max_lux,
   AVG(proximity) as avg_proximity,
-  MAX(proximity) as max_proximity
+  MAX(proximity) as max_proximity,
+  
+  -- Particulate matter metrics
+  AVG(pm1) as avg_pm1,
+  AVG(pm2_5) as avg_pm2_5,
+  AVG(pm10) as avg_pm10,
+  MAX(pm2_5) as max_pm2_5
 FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String((m => m <= 10 ? 0 : Math.floor((m - 1) / 5) * 5)(new Date().getUTCMinutes())).padStart(2, '0')}.parquet')
 
 ```
@@ -138,4 +144,30 @@ FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realti
   title="Average Proximity"
   fmt="num0"
   description="Average proximity sensor reading. Proximity values range from 0 (no object detected) to 2047 (object very close to sensor)."
+/>
+
+## Particulate Matter Metrics
+
+<BigValue 
+  data={station_data} 
+  value=avg_pm2_5
+  title="PM2.5 (μg/m³)"
+  fmt="num1"
+  description="Average concentration of particulate matter smaller than 2.5μm. WHO guideline: 24-hour mean < 15 μg/m³. Primarily from combustion, organic compounds, and metals."
+/>
+
+<BigValue 
+  data={station_data} 
+  value=avg_pm10
+  title="PM10 (μg/m³)"
+  fmt="num1"
+  description="Average concentration of particulate matter smaller than 10μm. WHO guideline: 24-hour mean < 45 μg/m³. Includes dust, pollen, and mold spores."
+/>
+
+<BigValue 
+  data={station_data} 
+  value=avg_pm1
+  title="PM1.0 (μg/m³)"
+  fmt="num1"
+  description="Average concentration of ultrafine particulate matter smaller than 1.0μm. These can penetrate deep into lungs and potentially enter the bloodstream."
 />

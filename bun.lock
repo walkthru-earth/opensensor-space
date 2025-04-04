@@ -15,7 +15,10 @@
     },
   },
   "overrides": {
+    "jsonwebtoken": "9.0.0",
+    "trim@<0.0.3": ">0.0.3",
     "sqlite3": "5.1.5",
+    "axios": "^1.7.4",
   },
   "packages": {
     "@75lb/deep-merge": ["@75lb/deep-merge@1.1.2", "", { "dependencies": { "lodash": "^4.17.21", "typical": "^7.1.1" } }, "sha512-08K9ou5VNbheZFxM5tDWoqjA3ImC50DiuuJ2tj1yEPRfkp8lLLg6XAaJ4On+a0yAXor/8ay5gHnAIshRM44Kpw=="],
