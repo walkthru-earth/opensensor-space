@@ -25,6 +25,113 @@ from station_01
   defaultValue={'All Time'}
 />
 
+## Particulate Matter Summary
+
+```sql main_data
+-- Get the base PM data we need
+select
+  timestamp,
+  pm1,
+  pm2_5,
+  pm10
+from station_01
+where 
+  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  and (pm1 is not null or pm2_5 is not null or pm10 is not null)
+```
+
+```sql current_24hr_means
+-- Calculate current 24-hour mean values
+SELECT
+  round(avg(pm1), 1) as pm1_mean,
+  round(avg(pm2_5), 1) as pm2_5_mean,
+  round(avg(pm10), 1) as pm10_mean,
+  pm1_mean || ' μg/m³' as pm1_value,
+  pm2_5_mean || ' μg/m³' as pm2_5_value,
+  pm10_mean || ' μg/m³' as pm10_value,
+  CASE
+    WHEN pm2_5_mean <= 12 THEN 'bg-green-50'
+    WHEN pm2_5_mean <= 35.4 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm2_5_bg_color,
+  CASE
+    WHEN pm10_mean <= 20 THEN 'bg-green-50'
+    WHEN pm10_mean <= 50 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm10_bg_color,
+  CASE
+    WHEN pm1_mean <= 10 THEN 'bg-green-50'
+    WHEN pm1_mean <= 25 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm1_bg_color,
+  CASE
+    WHEN pm2_5_mean <= 12 AND pm10_mean <= 20 THEN 'Good'
+    WHEN pm2_5_mean <= 35.4 AND pm10_mean <= 50 THEN 'Moderate'
+    WHEN pm2_5_mean <= 55.4 AND pm10_mean <= 100 THEN 'Unhealthy for Sensitive Groups'
+    WHEN pm2_5_mean <= 150.4 AND pm10_mean <= 200 THEN 'Unhealthy'
+    WHEN pm2_5_mean <= 250.4 AND pm10_mean <= 300 THEN 'Very Unhealthy'
+    WHEN pm2_5_mean > 250.4 OR pm10_mean > 300 THEN 'Hazardous'
+    ELSE 'Insufficient Data'
+  END as air_quality_category,
+  'Based on 24-hour mean PM2.5 and PM10 values' as aqi_note,
+  CASE
+    WHEN pm2_5_mean <= 12 AND pm10_mean <= 20 THEN 'bg-green-50'
+    WHEN pm2_5_mean <= 35.4 AND pm10_mean <= 50 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as aqi_bg_color
+FROM station_01
+WHERE 
+  timestamp >= (SELECT max(timestamp) - INTERVAL '24 hours' FROM station_01)
+```
+
+<BigValue
+  data={current_24hr_means}
+  value=air_quality_category
+  title="Current Air Quality Index (AQI) Category"
+  subtitle=aqi_note
+  backgroundColor=aqi_bg_color
+/>
+
+### 24-Hour Mean Values
+
+<Grid numCols={3}>
+  <BigValue
+    data={current_24hr_means}
+    value=pm1_value
+    title="PM1 24hr Mean"
+    subtitle="Ultra-fine particles"
+    backgroundColor=pm1_bg_color
+  />
+
+  <BigValue
+    data={current_24hr_means}
+    value=pm2_5_value
+    title="PM2.5 24hr Mean"
+    subtitle="Fine inhalable particles"
+    backgroundColor=pm2_5_bg_color
+  />
+
+  <BigValue
+    data={current_24hr_means}
+    value=pm10_value
+    title="PM10 24hr Mean"
+    subtitle="Coarse inhalable particles"
+    backgroundColor=pm10_bg_color
+  />
+</Grid>
+
+<Details title="Understanding Particulate Matter Readings">
+  - **PM1**: Ultra-fine particles (diameter less than 1 micrometer) that can penetrate deep into lungs and potentially enter bloodstream
+  - **PM2.5**: Fine inhalable particles (diameter less than 2.5 micrometers) that pose the greatest health risks
+  - **PM10**: Coarse inhalable particles (diameter less than 10 micrometers)
+  
+  ### WHO Guidelines (24-hour mean)
+  - PM2.5: 15 μg/m³
+  - PM10: 45 μg/m³
+  
+  Lower values indicate better air quality. The air quality categories follow EPA standards for PM2.5 and PM10.
+</Details>
+
 ## Particulate Matter Concentrations
 
 ```sql pm_hourly
@@ -205,86 +312,6 @@ ORDER BY hour
   <ReferenceLine y={15} label="WHO PM2.5 Guideline (15 micrograms/m³)" color="warning" lineType="dashed"/>
   <ReferenceLine y={45} label="WHO PM10 Guideline (45 micrograms/m³)" color="negative" lineType="dashed"/>
 </LineChart>
-
-```sql current_24hr_means
--- Calculate current 24-hour mean values
-SELECT
-  round(avg(pm1), 1) as pm1_mean,
-  round(avg(pm2_5), 1) as pm2_5_mean,
-  round(avg(pm10), 1) as pm10_mean,
-  pm1_mean || ' μg/m³' as pm1_value,
-  pm2_5_mean || ' μg/m³' as pm2_5_value,
-  pm10_mean || ' μg/m³' as pm10_value,
-  CASE
-    WHEN pm2_5_mean <= 12 THEN 'bg-green-50'
-    WHEN pm2_5_mean <= 35.4 THEN 'bg-yellow-50'
-    ELSE 'bg-red-50'
-  END as pm2_5_bg_color,
-  CASE
-    WHEN pm10_mean <= 20 THEN 'bg-green-50'
-    WHEN pm10_mean <= 50 THEN 'bg-yellow-50'
-    ELSE 'bg-red-50'
-  END as pm10_bg_color,
-  CASE
-    WHEN pm1_mean <= 10 THEN 'bg-green-50'
-    WHEN pm1_mean <= 25 THEN 'bg-yellow-50'
-    ELSE 'bg-red-50'
-  END as pm1_bg_color,
-  CASE
-    WHEN pm2_5_mean <= 12 AND pm10_mean <= 20 THEN 'Good'
-    WHEN pm2_5_mean <= 35.4 AND pm10_mean <= 50 THEN 'Moderate'
-    WHEN pm2_5_mean <= 55.4 AND pm10_mean <= 100 THEN 'Unhealthy for Sensitive Groups'
-    WHEN pm2_5_mean <= 150.4 AND pm10_mean <= 200 THEN 'Unhealthy'
-    WHEN pm2_5_mean <= 250.4 AND pm10_mean <= 300 THEN 'Very Unhealthy'
-    WHEN pm2_5_mean > 250.4 OR pm10_mean > 300 THEN 'Hazardous'
-    ELSE 'Insufficient Data'
-  END as air_quality_category,
-  'Based on 24-hour mean PM2.5 and PM10 values' as aqi_note,
-  CASE
-    WHEN pm2_5_mean <= 12 AND pm10_mean <= 20 THEN 'bg-green-50'
-    WHEN pm2_5_mean <= 35.4 AND pm10_mean <= 50 THEN 'bg-yellow-50'
-    ELSE 'bg-red-50'
-  END as aqi_bg_color
-FROM station_01
-WHERE 
-  timestamp >= (SELECT max(timestamp) - INTERVAL '24 hours' FROM station_01)
-```
-
-<BigValue
-  data={current_24hr_means}
-  value=air_quality_category
-  title="Current Air Quality Index (AQI) Category"
-  subtitle=aqi_note
-  backgroundColor=aqi_bg_color
-/>
-
-### 24-Hour Mean Values
-
-<Grid numCols={3}>
-  <BigValue
-    data={current_24hr_means}
-    value=pm1_value
-    title="PM1 24hr Mean"
-    subtitle="Ultra-fine particles"
-    backgroundColor=pm1_bg_color
-  />
-
-  <BigValue
-    data={current_24hr_means}
-    value=pm2_5_value
-    title="PM2.5 24hr Mean"
-    subtitle="Fine inhalable particles"
-    backgroundColor=pm2_5_bg_color
-  />
-
-  <BigValue
-    data={current_24hr_means}
-    value=pm10_value
-    title="PM10 24hr Mean"
-    subtitle="Coarse inhalable particles"
-    backgroundColor=pm10_bg_color
-  />
-</Grid>
 
 ```sql hourly_pattern
 -- Calculate average PM levels by hour of day

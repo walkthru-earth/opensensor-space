@@ -24,7 +24,7 @@ from station_01
   defaultValue={'Last 7 Days'}
 />
 
-## Sensor Statistics Summary
+## Light and Proximity Summary
 
 ```sql main_data
 -- Get the base light and proximity data we need

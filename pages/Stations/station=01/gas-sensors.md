@@ -436,39 +436,3 @@ ORDER BY day
     Hover over each day to see the exact values. These visualizations help identify patterns in gas levels over time.
 
 </Details>
-
-## Sensor Statistics
-
-```sql sensor_stats
-select
-  round(avg(oxidised), 1) as avg_oxidised,
-  round(avg(reducing), 1) as avg_reducing,
-  round(avg(nh3), 1) as avg_nh3
-from station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
-```
-
-<Grid numCols={3}>
-  <BigValue 
-    data={sensor_stats} 
-    value=avg_oxidised
-    title="Average Oxidised Gas" 
-    subtitle="Average oxidised gas reading"
-    backgroundColor="bg-blue-50"
-  />
-  <BigValue 
-    data={sensor_stats} 
-    value=avg_reducing
-    title="Average Reducing Gas" 
-    subtitle="Average reducing gas reading"
-    backgroundColor="bg-blue-50"
-  />
-  <BigValue 
-    data={sensor_stats} 
-    value=avg_nh3
-    title="Average NH3" 
-    subtitle="Average NH3 reading"
-    backgroundColor="bg-blue-50"
-  />
-</Grid>

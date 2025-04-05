@@ -25,7 +25,7 @@ from station_01
   defaultValue={'Last 7 Days'}
 />
 
-## Pressure Statistics Summary
+## Pressure Summary
 
 ```sql main_data
 -- Get the base pressure data we need

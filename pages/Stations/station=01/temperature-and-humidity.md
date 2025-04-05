@@ -25,6 +25,77 @@ from station_01
   defaultValue={'Last 7 Days'}
 />
 
+## Temperature and Humidity Summary
+
+```sql main_data
+-- Get all the base data we need in a single scan
+select
+  timestamp,
+  temperature,
+  humidity
+from station_01
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date
+  AND timestamp::date <= '${inputs.date_filter.end}'::date
+```
+
+```sql temp_summary
+select 
+  round(min(temperature), 1) as min_temp,
+  round(max(temperature), 1) as max_temp,
+  round(avg(temperature), 1) as avg_temp,
+  case
+    when avg(temperature) < 18 then 'bg-blue-50'
+    when avg(temperature) > 25 then 'bg-red-50'
+    else 'bg-green-50'
+  end as temp_bg_color,
+  round(min(temperature), 1) || ' - ' || round(max(temperature), 1) || '°C' as temp_range,
+  'Avg: ' || round(avg(temperature), 1) || '°C' as temp_avg
+from ${main_data}
+```
+
+```sql humidity_summary
+select 
+  round(min(humidity), 1) as min_humidity,
+  round(max(humidity), 1) as max_humidity,
+  round(avg(humidity), 1) as avg_humidity,
+  case
+    when avg(humidity) < 30 then 'bg-yellow-50'
+    when avg(humidity) > 60 then 'bg-blue-50'
+    else 'bg-green-50'
+  end as humidity_bg_color,
+  round(min(humidity), 1) || ' - ' || round(max(humidity), 1) || '%' as humidity_range,
+  'Avg: ' || round(avg(humidity), 1) || '%' as humidity_avg
+from ${main_data}
+```
+
+<Grid numCols={2}>
+  <BigValue 
+    data={temp_summary} 
+    value=temp_range 
+    title="Temperature Range" 
+    subtitle=temp_avg
+    backgroundColor=temp_bg_color
+  />
+  <BigValue 
+    data={humidity_summary} 
+    value=humidity_range 
+    title="Humidity Range" 
+    subtitle=humidity_avg
+    backgroundColor=humidity_bg_color
+  />
+</Grid>
+
+<Details title="Understanding Temperature and Humidity">
+  - **Temperature** is measured in degrees Celsius (°C)
+  - **Humidity** is measured as relative humidity (%)
+  
+  ### Comfort Ranges
+  - Temperature: 18-25°C is generally considered comfortable
+  - Humidity: 30-60% is ideal for comfort and health
+  
+  Values outside these ranges may affect comfort and potentially indoor air quality.
+</Details>
+
 ## Hourly Weather Patterns
 
 ```sql hourly_patterns
@@ -100,17 +171,6 @@ ORDER BY hour_of_day, metric_type
 
 ## Key Weather Metrics
 
-```sql main_data
--- Get all the base data we need in a single scan
-select
-  timestamp,
-  temperature,
-  humidity
-from station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
-```
-
 ```sql time_series_data
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
@@ -124,7 +184,9 @@ WITH time_buckets AS (
     END AS half_hour_timestamp,
     temperature,
     humidity
-  FROM ${main_data}
+  FROM station_01
+  WHERE timestamp::date >= '${inputs.date_filter.start}'::date
+    AND timestamp::date <= '${inputs.date_filter.end}'::date
 )
 
 SELECT
@@ -173,53 +235,6 @@ ORDER BY half_hour_timestamp, metric_type
   <ReferenceLine y={60} label="Humidity Upper" color=negative lineType=dotted hideValue=true/>
   <ReferenceLine y={30} label="Humidity Lower" color=warning lineType=dotted hideValue=true/>
 </LineChart>
-
-```sql temp_summary
-select 
-  round(min(temperature), 1) as min_temp,
-  round(max(temperature), 1) as max_temp,
-  round(avg(temperature), 1) as avg_temp,
-  case
-    when avg(temperature) < 18 then 'bg-blue-50'
-    when avg(temperature) > 25 then 'bg-red-50'
-    else 'bg-green-50'
-  end as temp_bg_color,
-  round(min(temperature), 1) || ' - ' || round(max(temperature), 1) || '°C' as temp_range,
-  'Avg: ' || round(avg(temperature), 1) || '°C' as temp_avg
-from ${main_data}
-```
-
-```sql humidity_summary
-select 
-  round(min(humidity), 1) as min_humidity,
-  round(max(humidity), 1) as max_humidity,
-  round(avg(humidity), 1) as avg_humidity,
-  case
-    when avg(humidity) < 30 then 'bg-yellow-50'
-    when avg(humidity) > 60 then 'bg-blue-50'
-    else 'bg-green-50'
-  end as humidity_bg_color,
-  round(min(humidity), 1) || ' - ' || round(max(humidity), 1) || '%' as humidity_range,
-  'Avg: ' || round(avg(humidity), 1) || '%' as humidity_avg
-from ${main_data}
-```
-
-<Grid numCols={2}>
-  <BigValue 
-    data={temp_summary} 
-    value=temp_range 
-    title="Temperature Range" 
-    subtitle=temp_avg
-    backgroundColor=temp_bg_color
-  />
-  <BigValue 
-    data={humidity_summary} 
-    value=humidity_range 
-    title="Humidity Range" 
-    subtitle=humidity_avg
-    backgroundColor=humidity_bg_color
-  />
-</Grid>
 
 ## Temperature and Humidity Correlation
 
