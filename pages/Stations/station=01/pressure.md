@@ -100,3 +100,51 @@ where pressure = (select max(pressure) from ${main_data})
     symbolSize=8
   />
 </LineChart>
+
+## Daily Calendar View
+
+```sql daily_pressure_for_calendar
+-- Get daily average pressure values for the calendar heatmap
+SELECT
+  date_trunc('day', timestamp)::date as day,
+  round(avg(pressure), 1) as avg_pressure
+FROM station_01
+WHERE 
+  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND pressure IS NOT NULL
+GROUP BY day
+ORDER BY day
+```
+
+### Daily Atmospheric Pressure
+
+<CalendarHeatmap 
+  data={daily_pressure_for_calendar}
+  date=day
+  value=avg_pressure
+  title="Daily Atmospheric Pressure"
+  subtitle="Calendar view showing daily average atmospheric pressure (hPa)"
+  colorScale={[
+    ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],  // Low pressure: Dark blue to light blue
+    ["rgb(173, 255, 47)", "rgb(144, 238, 144)"],  // Normal pressure: Light green-yellow to light green
+    ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]  // High pressure: Orange to red
+  ]}
+  min=990
+  max=1040
+  valueFmt="0.0"
+/>
+
+<Details title='About Pressure Calendar Heatmap'>
+  This calendar visualization shows daily average atmospheric pressure in hectopascals (hPa):
+  
+  - **Color Scale**:
+    - Blue: Low pressure (typically associated with unsettled weather, clouds, precipitation)
+    - Green: Normal pressure (around the standard atmospheric pressure of 1013.25 hPa)
+    - Orange/Red: High pressure (typically associated with clear, settled weather)
+  
+  Standard atmospheric pressure at sea level is 1013.25 hPa. Variations in atmospheric pressure are important for weather forecasting:
+  - Rising pressure often indicates improving weather
+  - Falling pressure often indicates deteriorating weather
+  
+  Hover over each day to see the exact values. This visualization helps identify patterns in atmospheric pressure over time.
+</Details>

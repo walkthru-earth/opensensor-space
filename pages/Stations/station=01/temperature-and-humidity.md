@@ -25,211 +25,51 @@ from station_01
   defaultValue={'Last 7 Days'}
 />
 
-## Weather Statistics Summary
+## Hourly Weather Patterns
 
-```sql main_data
--- Get all the base data we need in a single scan
-select
-  timestamp,
-  temperature,
-  humidity,
-  pressure
-from station_01
+```sql hourly_patterns
+-- Calculate hourly patterns throughout the day with a stacked format for the series
+SELECT
+  extract('hour' from timestamp) as hour_of_day,
+  round(avg(temperature), 1) as temperature,
+  round(avg(humidity), 1) as humidity
+FROM station_01
 where timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+GROUP BY hour_of_day
+ORDER BY hour_of_day
 ```
 
-```sql summary_stats
-select
-  round(min(temperature), 2) as min_temp,
-  round(max(temperature), 2) as max_temp,
-  round(avg(temperature), 2) as avg_temp,
-  round(min(humidity), 2) as min_humidity,
-  round(max(humidity), 2) as max_humidity,
-  round(avg(humidity), 2) as avg_humidity,
-  round(min(pressure), 2) as min_pressure,
-  round(max(pressure), 2) as max_pressure,
-  round(avg(pressure), 2) as avg_pressure
-from ${main_data}
-```
-
-<DataTable
-  data={summary_stats}
-  title="Weather Statistics Summary"
-/>
-
-```sql weather_data
-select
-  timestamp,
-  temperature,
-  humidity
-from ${main_data}
-order by timestamp
-```
-
-```sql temp_extremes
-select
-  timestamp,
-  temperature,
-  case
-    when temperature = (select max(temperature) from ${main_data})
-    then 'Highest: ' || round(temperature, 1) || '°C'
-    when temperature = (select min(temperature) from ${main_data})
-    then 'Lowest: ' || round(temperature, 1) || '°C'
-  end as label
-from ${main_data}
-where temperature = (select max(temperature) from ${main_data})
-   or temperature = (select min(temperature) from ${main_data})
-```
-
-```sql humidity_extremes
-select
-  timestamp,
-  humidity,
-  case
-    when humidity = (select max(humidity) from ${main_data})
-    then 'Highest: ' || round(humidity, 1) || '%'
-    when humidity = (select min(humidity) from ${main_data})
-    then 'Lowest: ' || round(humidity, 1) || '%'
-  end as label
-from ${main_data}
-where humidity = (select max(humidity) from ${main_data})
-   or humidity = (select min(humidity) from ${main_data})
-```
-
-## Temperature Over Time
-
-<LineChart
-  data={weather_data}
-  x=timestamp
-  y=temperature
-  yAxisTitle="Temperature (°C)"
-  title="Temperature Over Time"
-  subtitle="Temperature readings from weather station"
-  markers=true
-  markerSize=4
-  lineWidth=2
-  chartAreaHeight=250
-  xFmt="yyyy-MM-dd HH:mm:ss"
-  step=true
-  echartsOptions={{
-      dataZoom: {
-          show: true,
-          bottom: 10
-      },
-      grid: {
-          bottom: 50
-      }
-  }}
->
-  <ReferenceLine y={25} label="Comfort Upper Limit" color=warning lineType=dashed hideValue=true/>
-  <ReferenceLine y={18} label="Comfort Lower Limit" color=info lineType=dashed hideValue=true/>
-  <ReferenceArea yMin={18} yMax={25} label="Comfort Zone" color=positive opacity=0.1 labelPosition=right/>
-  <ReferencePoint 
-    data={temp_extremes} 
-    x=timestamp 
-    y=temperature 
-    label=label 
-    labelPosition=top 
-    color=negative 
-    symbolSize=8
-  />
-  <Callout 
-    x={summary_stats[0].max_temp > 25 ? summary_stats[0].max_temp : 26} 
-    y={25} 
-    labelPosition=right 
-    labelWidth=150
-    color=warning
-  >
-    Temperatures above 25°C
-    may cause discomfort
-  </Callout>
-</LineChart>
-
-## Humidity Over Time
-
-<LineChart
-  data={weather_data}
-  x=timestamp
-  y=humidity
-  yAxisTitle="Humidity (%)"
-  title="Humidity Over Time"
-  subtitle="Humidity readings from weather station"
-  markers=true
-  markerSize=4
-  lineWidth=2
-  chartAreaHeight=250
-  xFmt="yyyy-MM-dd HH:mm:ss"
-  color=info
-  step=true
-  echartsOptions={{
-      dataZoom: {
-          show: true,
-          bottom: 10
-      },
-      grid: {
-          bottom: 50
-      }
-  }}
->
-  <ReferenceLine y={60} label="High Humidity" color=negative lineType=dashed hideValue=true/>
-  <ReferenceLine y={30} label="Low Humidity" color=warning lineType=dashed hideValue=true/>
-  <ReferenceArea yMin={30} yMax={60} label="Comfort Zone" color=positive opacity=0.1 labelPosition=right/>
-  <ReferencePoint 
-    data={humidity_extremes} 
-    x=timestamp 
-    y=humidity 
-    label=label 
-    labelPosition=top 
-    color=negative 
-    symbolSize=8
-  />
-  <Callout 
-    x={summary_stats[0].max_humidity > 60 ? summary_stats[0].max_humidity : 65} 
-    y={60} 
-    labelPosition=right 
-    labelWidth=150
-    color=negative
-  >
-    High humidity can cause
-    mold growth and discomfort
-  </Callout>
-</LineChart>
-
-## Temperature and Humidity Stacked View
-
-```sql stacked_weather_data
--- Temperature data
-select
-  timestamp,
+```sql hourly_patterns_stacked
+-- Format data for the line chart with series
+SELECT
+  hour_of_day,
   temperature as value,
   'Temperature' as metric_type
-from ${main_data}
+FROM ${hourly_patterns}
 
 UNION ALL
 
--- Humidity data
-select
-  timestamp,
+SELECT
+  hour_of_day,
   humidity as value,
   'Humidity' as metric_type
-from ${main_data}
-order by timestamp, metric_type
+FROM ${hourly_patterns}
+ORDER BY hour_of_day, metric_type
 ```
 
 <LineChart
-  data={stacked_weather_data}
-  x=timestamp
+  data={hourly_patterns_stacked}
+  x=hour_of_day
   y=value
   series=metric_type
-  title="Temperature and Humidity Comparison"
-  subtitle="Stacked view of temperature and humidity readings"
+  title="Average Hourly Patterns"
+  subtitle="How temperature and humidity change throughout the day"
+  chartAreaHeight=250
+  lineWidth=3
   markers=true
-  markerSize=3
-  lineWidth=2
-  chartAreaHeight=300
-  xFmt="yyyy-MM-dd HH:mm:ss"
-  yAxisTitle="Value"
-  step=true
+  markerSize=5
+  colors={["#e41a1c", "#377eb8"]}
+  xFmt="0"
   echartsOptions={{
       dataZoom: {
           show: true,
@@ -246,9 +86,164 @@ order by timestamp, metric_type
   <ReferenceLine y={30} label="Humidity Lower" color=warning lineType=dotted hideValue=true/>
 </LineChart>
 
-## Temperature vs Humidity
+<Details title='About Hourly Patterns'>
+  This chart shows the average temperature and humidity for each hour of the day, calculated from all data within your selected date range. 
+  
+  - It always shows hours 0-23 because it's designed to reveal the daily cycle pattern
+  - Values are averaged across all days in your selected period
+  - Use the zoom control at the bottom to focus on specific hours
+  - Temperature and humidity often follow predictable daily patterns that this visualization reveals
+</Details>
+
+## Key Weather Metrics
+
+```sql main_data
+-- Get all the base data we need in a single scan
+select
+  timestamp,
+  temperature,
+  humidity
+from station_01
+where timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+```
+
+```sql time_series_data
+-- Format data for the time series chart (30-minute intervals)
+WITH time_buckets AS (
+  SELECT 
+    timestamp,
+    -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
+    CASE 
+      WHEN EXTRACT(MINUTE FROM timestamp) < 30 
+      THEN date_trunc('hour', timestamp)
+      ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
+    END AS half_hour_timestamp,
+    temperature,
+    humidity
+  FROM ${main_data}
+)
+
+SELECT
+  half_hour_timestamp,
+  round(avg(temperature), 1) as value,
+  'Temperature' as metric_type
+FROM time_buckets
+GROUP BY half_hour_timestamp
+
+UNION ALL
+
+SELECT
+  half_hour_timestamp,
+  round(avg(humidity), 1) as value,
+  'Humidity' as metric_type
+FROM time_buckets
+GROUP BY half_hour_timestamp
+ORDER BY half_hour_timestamp, metric_type
+```
+
+<LineChart
+  data={time_series_data}
+  x=half_hour_timestamp
+  y=value
+  series=metric_type
+  title="Temperature and Humidity Over Time"
+  subtitle="30-minute average readings over the selected date range"
+  chartAreaHeight=250
+  lineWidth=2
+  markers=true
+  markerSize=4
+  colors={["#e41a1c", "#377eb8"]}
+  xFmt="MMM dd, HH:mm"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
+>
+  <ReferenceLine y={25} label="Temp Comfort Upper" color=warning lineType=dashed hideValue=true/>
+  <ReferenceLine y={18} label="Temp Comfort Lower" color=info lineType=dashed hideValue=true/>
+  <ReferenceLine y={60} label="Humidity Upper" color=negative lineType=dotted hideValue=true/>
+  <ReferenceLine y={30} label="Humidity Lower" color=warning lineType=dotted hideValue=true/>
+</LineChart>
+
+```sql temp_summary
+select 
+  round(min(temperature), 1) as min_temp,
+  round(max(temperature), 1) as max_temp,
+  round(avg(temperature), 1) as avg_temp,
+  case
+    when avg(temperature) < 18 then 'bg-blue-50'
+    when avg(temperature) > 25 then 'bg-red-50'
+    else 'bg-green-50'
+  end as temp_bg_color,
+  min(temperature) || ' - ' || max(temperature) || '°C' as temp_range,
+  'Avg: ' || round(avg(temperature), 1) || '°C' as temp_avg
+from ${main_data}
+```
+
+```sql humidity_summary
+select 
+  round(min(humidity), 1) as min_humidity,
+  round(max(humidity), 1) as max_humidity,
+  round(avg(humidity), 1) as avg_humidity,
+  case
+    when avg(humidity) < 30 then 'bg-yellow-50'
+    when avg(humidity) > 60 then 'bg-blue-50'
+    else 'bg-green-50'
+  end as humidity_bg_color,
+  min(humidity) || ' - ' || max(humidity) || '%' as humidity_range,
+  'Avg: ' || round(avg(humidity), 1) || '%' as humidity_avg
+from ${main_data}
+```
+
+<BigValue
+  data={temp_summary}
+  title="Temperature Range"
+  value=temp_range
+  subtitle=temp_avg
+  bold=true
+  backgroundColor=temp_bg_color
+/>
+
+<BigValue
+  data={humidity_summary}
+  title="Humidity Range"
+  value=humidity_range
+  subtitle=humidity_avg
+  bold=true
+  backgroundColor=humidity_bg_color
+/>
+
+## Temperature and Humidity Correlation
+
+```sql extremes
+select
+  timestamp,
+  temperature,
+  humidity,
+  case
+    when temperature = (select max(temperature) from ${main_data})
+    then 'Highest Temp: ' || round(temperature, 1) || '°C'
+    when temperature = (select min(temperature) from ${main_data})
+    then 'Lowest Temp: ' || round(temperature, 1) || '°C'
+    when humidity = (select max(humidity) from ${main_data})
+    then 'Highest Humidity: ' || round(humidity, 1) || '%'
+    when humidity = (select min(humidity) from ${main_data})
+    then 'Lowest Humidity: ' || round(humidity, 1) || '%'
+  end as label
+from ${main_data}
+where temperature = (select max(temperature) from ${main_data})
+   or temperature = (select min(temperature) from ${main_data})
+   or humidity = (select max(humidity) from ${main_data})
+   or humidity = (select min(humidity) from ${main_data})
+```
 
 ```sql temp_vs_humidity
+-- Temperature vs Humidity correlation data
 select 
   date_trunc('hour', timestamp) as hour,
   extract('hour' from timestamp) as hour_of_day,
@@ -264,6 +259,7 @@ order by hour
 ```
 
 ```sql regression
+-- Calculate regression line for temperature vs humidity
 WITH 
 coeffs AS (
     SELECT
@@ -291,7 +287,8 @@ GROUP BY slope, intercept, r_squared
   tooltipTitle=hour
   xAxisTitle="Temperature (°C)"
   yAxisTitle="Humidity (%)"
-  title="Temperature vs Humidity Correlation by Day"
+  title="Temperature vs Humidity Correlation"
+  subtitle="Each point represents hourly averages, colored by day"
   pointSize=12
   shape="circle"
 >
@@ -306,3 +303,69 @@ GROUP BY slope, intercept, r_squared
     can cause dry skin and respiratory issues
   </Callout>
 </ScatterPlot>
+
+## Daily Calendar Views
+
+```sql daily_weather_for_calendar
+-- Get daily average temperature and humidity values for the calendar heatmaps
+SELECT
+  date_trunc('day', timestamp)::date as day,
+  round(avg(temperature), 1) as avg_temp,
+  round(avg(humidity), 1) as avg_humidity
+FROM station_01
+WHERE 
+  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND (temperature IS NOT NULL OR humidity IS NOT NULL)
+GROUP BY day
+ORDER BY day
+```
+
+<Grid cols=2>
+  <CalendarHeatmap 
+    data={daily_weather_for_calendar}
+    date=day
+    value=avg_temp
+    title="Daily Temperature Levels"
+    subtitle="Calendar view showing daily average temperature"
+    colorScale={[
+      ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],  // Cold: Dark blue to light blue (below 18°C)
+      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (18-25°C)
+      ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]     // Hot: Orange to red (above 25°C)
+    ]}
+    min=10
+    max=30
+    valueFmt="0.0"
+  />
+
+  <CalendarHeatmap 
+    data={daily_weather_for_calendar}
+    date=day
+    value=avg_humidity
+    title="Daily Humidity Levels"
+    subtitle="Calendar view showing daily average humidity"
+    colorScale={[
+      ["rgb(255, 165, 0)", "rgb(255, 255, 0)"],  // Too dry: Orange to yellow (below 30%)
+      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (30-60%)
+      ["rgb(0, 0, 255)", "rgb(138, 43, 226)"]    // Too humid: Blue to purple (above 60%)
+    ]}
+    min=0
+    max=100
+    valueFmt="0.0"
+  />
+</Grid>
+
+<Details title='About Weather Calendar Heatmaps'>
+  These calendar visualizations show daily average temperature and humidity levels. Color intensity represents values according to indoor comfort standards:
+  
+  - **Temperature**: 
+    - Blue: Too cold (below 18°C)
+    - Green: Comfort zone (18-25°C)
+    - Orange/Red: Too hot (above 25°C)
+  
+  - **Humidity**: 
+    - Yellow/Orange: Too dry (below 30%)
+    - Green: Comfort zone (30-60%)
+    - Blue/Purple: Too humid (above 60%)
+  
+  Hover over each day to see the exact values. These visualizations help identify patterns and seasonal changes over time.
+</Details>
