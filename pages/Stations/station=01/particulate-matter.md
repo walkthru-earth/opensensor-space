@@ -234,34 +234,6 @@ order by 1
   xFmt="MMM dd, HH:mm"
 />
 
-## Latest Measurements
-
-```sql latest_measurements
--- Get the latest measurements
-SELECT
-  timestamp,
-  round(pm1, 1) as pm1,
-  round(pm2_5, 1) as pm2_5,
-  round(pm10, 1) as pm10,
-  round(particles_03um) as "0.3μm",
-  round(particles_05um) as "0.5μm",
-  round(particles_10um) as "1.0μm",
-  round(particles_25um) as "2.5μm",
-  round(particles_50um) as "5.0μm",
-  round(particles_100um) as "10.0μm"
-FROM station_01
-WHERE
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
-  AND (pm1 IS NOT NULL OR pm2_5 IS NOT NULL OR pm10 IS NOT NULL)
-ORDER BY timestamp DESC
-LIMIT 5
-```
-
-<DataTable
-  data={latest_measurements}
-  title="Latest Particulate Matter Readings"
-/>
-
 ## 24-Hour Mean Analysis & Air Quality Insights
 
 ```sql pm_24hr_mean

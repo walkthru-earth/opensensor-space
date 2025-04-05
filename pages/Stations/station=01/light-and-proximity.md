@@ -251,3 +251,67 @@ where lux = (select max(lux) from ${main_data})
     Use the zoom control at the bottom to focus on specific time periods of interest.
 
 </Details>
+
+## Daily Calendar Views
+
+```sql daily_values_for_calendar
+-- Get daily average light and proximity values for the calendar heatmaps
+SELECT
+  date_trunc('day', timestamp)::date as day,
+  round(avg(lux), 1) as avg_lux,
+  round(avg(proximity), 1) as avg_proximity
+FROM station_01
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date
+  AND timestamp::date <= '${inputs.date_filter.end}'::date
+  AND (lux IS NOT NULL OR proximity IS NOT NULL)
+GROUP BY day
+ORDER BY day
+```
+
+<CalendarHeatmap 
+  data={daily_values_for_calendar}
+  date=day
+  value=avg_lux
+  title="Daily Light Levels"
+  subtitle="Calendar view showing daily average light levels in lux"
+  colorScale={[
+    ["rgb(50, 50, 50)", "rgb(100, 100, 100)"],  // Very dark: Dark gray to light gray (below 50 lux)
+    ["rgb(255, 204, 0)", "rgb(255, 255, 0)"],   // Medium: Dark yellow to bright yellow (50-500 lux)
+    ["rgb(255, 165, 0)", "rgb(255, 140, 0)"]    // Bright: Orange to dark orange (above 500 lux)
+  ]}
+  min=0
+  max=1000
+  valueFmt="0.0"
+/>
+
+<CalendarHeatmap 
+  data={daily_values_for_calendar}
+  date=day
+  value=avg_proximity
+  title="Daily Proximity Readings"
+  subtitle="Calendar view showing daily average proximity values"
+  colorScale={[
+    ["rgb(0, 128, 128)", "rgb(64, 224, 208)"],  // Close objects: Teal to turquoise (low values)
+    ["rgb(70, 130, 180)", "rgb(100, 149, 237)"], // Medium distance: Steel blue to cornflower blue
+    ["rgb(106, 90, 205)", "rgb(138, 43, 226)"]  // Far objects: Slate blue to blue violet (high values)
+  ]}
+  min=0
+  max=100
+  valueFmt="0.0"
+/>
+
+<Details title='About Calendar Views'>
+  These calendar visualizations show daily average light and proximity levels:
+  
+  - **Light Levels**: 
+    - Gray: Very dark (below 50 lux)
+    - Yellow: Normal indoor lighting (50-500 lux)
+    - Orange: Bright light (above 500 lux)
+  
+  - **Proximity**: 
+    - Teal/Turquoise: Objects close to the sensor (low values)
+    - Blue: Medium distance
+    - Purple: No objects detected near the sensor (high values)
+  
+  Hover over each day to see the exact values. These visualizations help identify patterns in light and proximity readings over time.
+</Details>

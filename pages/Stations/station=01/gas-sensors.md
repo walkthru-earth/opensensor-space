@@ -370,52 +370,50 @@ GROUP BY day
 ORDER BY day
 ```
 
-<Grid numCols={3}>
-  <CalendarHeatmap 
-    data={daily_gas_for_calendar}
-    date=day
-    value=avg_oxidised
-    title="Daily Oxidised Gas Levels"
-    subtitle="Daily average oxidised gas readings"
-    colorScale={[
-      ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-      ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
-    ]}
-    valueFmt="0.0"
-    invertColorScale=true
-  />
+<CalendarHeatmap 
+  data={daily_gas_for_calendar}
+  date=day
+  value=avg_oxidised
+  title="Daily Oxidised Gas Levels"
+  subtitle="Daily average oxidised gas readings"
+  colorScale={[
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+  ]}
+  valueFmt="0.0"
+  invertColorScale=true
+/>
 
-  <CalendarHeatmap 
-    data={daily_gas_for_calendar}
-    date=day
-    value=avg_reducing
-    title="Daily Reducing Gas Levels"
-    subtitle="Daily average reducing gas readings"
-    colorScale={[
-      ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-      ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
-    ]}
-    valueFmt="0.0"
-    invertColorScale=true
-  />
+<CalendarHeatmap 
+  data={daily_gas_for_calendar}
+  date=day
+  value=avg_reducing
+  title="Daily Reducing Gas Levels"
+  subtitle="Daily average reducing gas readings"
+  colorScale={[
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+  ]}
+  valueFmt="0.0"
+  invertColorScale=true
+/>
 
-  <CalendarHeatmap 
-    data={daily_gas_for_calendar}
-    date=day
-    value=avg_nh3
-    title="Daily NH3 Levels"
-    subtitle="Daily average NH3 readings"
-    colorScale={[
-      ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-      ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
-    ]}
-    valueFmt="0.0"
-    invertColorScale=true
-  />
-</Grid>
+<CalendarHeatmap 
+  data={daily_gas_for_calendar}
+  date=day
+  value=avg_nh3
+  title="Daily NH3 Levels"
+  subtitle="Daily average NH3 readings"
+  colorScale={[
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+  ]}
+  valueFmt="0.0"
+  invertColorScale=true
+/>
 
 <Details title='About Gas Sensor Calendar Heatmaps'>
     

@@ -3,11 +3,13 @@ title: Near Real-Time Weather Data
 hide_title: true
 ---
 
-# Near Real-Time Weather Data using latest uploaded parquet file.
+<LastRefreshed/>
 
-<small>*All metrics represent averages from the last 5 minutes of data collection at this station.*</small>
+<Details title='About this dashboard'>
+  This dashboard shows near real-time weather data from Station 01. All metrics represent averages from the last 5 minutes of data collection.
+</Details>
 
-## Key Metrics
+## Real-Time Summary
 
 ```sql station_data
 SELECT 
@@ -47,127 +49,225 @@ SELECT
   AVG(pm1) as avg_pm1,
   AVG(pm2_5) as avg_pm2_5,
   AVG(pm10) as avg_pm10,
-  MAX(pm2_5) as max_pm2_5
+  MAX(pm2_5) as max_pm2_5,
+  
+  -- Add calculated fields for color indicators
+  CASE
+    WHEN AVG(temperature) < 18 THEN 'bg-blue-50'
+    WHEN AVG(temperature) > 25 THEN 'bg-red-50'
+    ELSE 'bg-green-50'
+  END as temp_bg_color,
+  
+  CASE
+    WHEN AVG(humidity) < 30 THEN 'bg-yellow-50'
+    WHEN AVG(humidity) > 60 THEN 'bg-blue-50'
+    ELSE 'bg-green-50'
+  END as humidity_bg_color,
+  
+  CASE
+    WHEN AVG(pressure) < 1000 THEN 'bg-purple-50'
+    WHEN AVG(pressure) > 1020 THEN 'bg-amber-50'
+    ELSE 'bg-green-50'
+  END as pressure_bg_color,
+  
+  CASE
+    WHEN AVG(pm2_5) <= 12 THEN 'bg-green-50'
+    WHEN AVG(pm2_5) <= 35.4 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm25_bg_color,
+  
+  CASE
+    WHEN AVG(lux) < 50 THEN 'bg-gray-50'
+    WHEN AVG(lux) < 500 THEN 'bg-yellow-50'
+    ELSE 'bg-amber-50'
+  END as lux_bg_color,
+  
+  CASE
+    WHEN AVG(oxidised) < 50 THEN 'bg-red-50'
+    WHEN AVG(oxidised) < 100 THEN 'bg-yellow-50'
+    ELSE 'bg-green-50'
+  END as oxidised_bg_color,
+  
+  CASE
+    WHEN AVG(reducing) < 100 THEN 'bg-red-50'
+    WHEN AVG(reducing) < 200 THEN 'bg-yellow-50'
+    ELSE 'bg-green-50'
+  END as reducing_bg_color,
+  
+  CASE
+    WHEN AVG(nh3) < 10 THEN 'bg-red-50'
+    WHEN AVG(nh3) < 100 THEN 'bg-yellow-50'
+    ELSE 'bg-green-50'
+  END as nh3_bg_color,
+  
+  CASE
+    WHEN AVG(pm10) <= 20 THEN 'bg-green-50'
+    WHEN AVG(pm10) <= 50 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm10_bg_color,
+  
+  CASE
+    WHEN AVG(pm1) <= 10 THEN 'bg-green-50'
+    WHEN AVG(pm1) <= 25 THEN 'bg-yellow-50'
+    ELSE 'bg-red-50'
+  END as pm1_bg_color
 FROM read_parquet('https://data.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, '0')}/day=${String(new Date().getUTCDate()).padStart(2, '0')}/data_${String(new Date().getUTCHours()).padStart(2, '0')}${String((m => m <= 10 ? 0 : Math.floor((m - 1) / 5) * 5)(new Date().getUTCMinutes())).padStart(2, '0')}.parquet')
 
 ```
 
-<BigValue 
-  data={station_data} 
-  value=avg_temp
-  title="Average Temperature (°C)"
-  fmt="num1"
-  description="Average ambient temperature measured in degrees Celsius. Standard range: 15°C to 30°C. Optimal indoor temperature is 20-25°C."
-/>
+### Key Environmental Metrics
 
-<BigValue 
-  data={station_data} 
-  value=avg_humidity
-  title="Average Humidity (%)"
-  fmt="num1"
-  description="Relative humidity percentage in the air. Standard range: 30% to 60%. Optimal indoor humidity is 40-50%."
-/>
+<Grid numCols={3}>
+  <BigValue 
+    data={station_data} 
+    value=avg_temp
+    title="Temperature (°C)"
+    fmt="num1"
+    subtitle="Optimal indoor: 20-25°C"
+    backgroundColor=temp_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_humidity
+    title="Humidity (%)"
+    fmt="num1"
+    subtitle="Optimal indoor: 40-50%"
+    backgroundColor=humidity_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_pressure
+    title="Pressure (hPa)"
+    fmt="num1"
+    subtitle="Standard: 1013.25 hPa"
+    backgroundColor=pressure_bg_color
+  />
+</Grid>
 
-<BigValue 
-  data={station_data} 
-  value=avg_pressure
-  title="Average Pressure (hPa)"
-  fmt="num1"
-  description="Atmospheric pressure in hectopascals. Standard range: 970 hPa to 1030 hPa. Standard sea level pressure is 1013.25 hPa."
-/>
+### Air Quality Metrics
 
-## Temperature Metrics
+<Grid numCols={3}>
+  <BigValue 
+    data={station_data} 
+    value=avg_pm2_5
+    title="PM2.5 (μg/m³)"
+    fmt="num1"
+    subtitle="WHO guideline: <15 μg/m³"
+    backgroundColor=pm25_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_pm10
+    title="PM10 (μg/m³)"
+    fmt="num1"
+    subtitle="WHO guideline: <45 μg/m³"
+    backgroundColor=pm10_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_pm1
+    title="PM1.0 (μg/m³)"
+    fmt="num1"
+    subtitle="Ultrafine particles"
+    backgroundColor=pm1_bg_color
+  />
+</Grid>
 
-<BigValue 
-  data={station_data} 
-  value=min_temp
-  title="Minimum Temperature (°C)"
-  fmt="num1"
-  description="Lowest recorded temperature. Standard range: 15°C to 30°C."
-/>
+### Gas Sensor Readings
 
-<BigValue 
-  data={station_data} 
-  value=max_temp
-  title="Maximum Temperature (°C)"
-  fmt="num1"
-  description="Highest recorded temperature. Standard range: 15°C to 30°C."
-/>
+<Grid numCols={3}>
+  <BigValue 
+    data={station_data} 
+    value=avg_oxidised
+    title="Oxidised Gas (kΩ)"
+    fmt="num1"
+    subtitle="Lower = higher concentration"
+    backgroundColor=oxidised_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_reducing
+    title="Reducing Gas (kΩ)"
+    fmt="num1"
+    subtitle="Lower = higher concentration"
+    backgroundColor=reducing_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_nh3
+    title="Ammonia (kΩ)"
+    fmt="num1"
+    subtitle="Lower = higher concentration"
+    backgroundColor=nh3_bg_color
+  />
+</Grid>
 
-## Air Quality Metrics
+### Light and Proximity
 
-<BigValue 
-  data={station_data} 
-  value=avg_oxidised
-  title="Oxidised Gas (kΩ)"
-  fmt="num1"
-  description="Average oxidising gas level (primarily NO2). Lower resistance values indicate higher gas concentrations. Standard range: 50-500 kΩ."
-/>
+<Grid numCols={2}>
+  <BigValue 
+    data={station_data} 
+    value=avg_lux
+    title="Light Level (lux)"
+    fmt="num1"
+    subtitle="Office: 300-500 lux"
+    backgroundColor=lux_bg_color
+  />
+  <BigValue 
+    data={station_data} 
+    value=avg_proximity
+    title="Proximity"
+    fmt="num0"
+    subtitle="Lower = closer objects"
+  />
+</Grid>
 
-<BigValue 
-  data={station_data} 
-  value=avg_reducing
-  title="Reducing Gas (kΩ)"
-  fmt="num1"
-  description="Average reducing gas level (primarily CO). Lower resistance values indicate higher gas concentrations. Standard range: 100-600 kΩ."
-/>
+## Detailed Metrics
 
-<BigValue 
-  data={station_data} 
-  value=avg_nh3
-  title="Ammonia (kΩ)"
-  fmt="num1"
-  description="Average ammonia (NH3) gas level. Lower resistance values indicate higher gas concentrations. Standard range: 10-300 kΩ."
-/>
+### Temperature Range
 
-## Light Metrics
+<Grid numCols={2}>
+  <BigValue 
+    data={station_data} 
+    value=min_temp
+    title="Minimum Temperature (°C)"
+    fmt="num1"
+    description="Lowest recorded temperature in the last 5 minutes"
+  />
+  <BigValue 
+    data={station_data} 
+    value=max_temp
+    title="Maximum Temperature (°C)"
+    fmt="num1"
+    description="Highest recorded temperature in the last 5 minutes"
+  />
+</Grid>
 
-<BigValue 
-  data={station_data} 
-  value=avg_lux
-  title="Average Light Level (lux)"
-  fmt="num1"
-  description="Average ambient light level in lux. Standard ranges: Moonlight (0.1 lux), Living room (50-100 lux), Office (300-500 lux), Daylight (10,000-25,000 lux)."
-/>
+### Particulate Matter Notes
 
-<BigValue 
-  data={station_data} 
-  value=max_lux
-  title="Maximum Light Level (lux)"
-  fmt="num1"
-  description="Peak light level recorded. Standard ranges: Moonlight (0.1 lux), Living room (50-100 lux), Office (300-500 lux), Daylight (10,000-25,000 lux)."
-/>
+<Details title='Understanding Air Quality Readings'>
+  - **PM1.0**: Ultrafine particles (diameter less than 1 micrometer) that can penetrate deep into lungs and potentially enter bloodstream
+  - **PM2.5**: Fine inhalable particles (diameter less than 2.5 micrometers) that pose the greatest health risks
+  - **PM10**: Coarse inhalable particles (diameter less than 10 micrometers)
+  
+  ### WHO Guidelines (24-hour mean)
+  - PM2.5: 15 μg/m³
+  - PM10: 45 μg/m³
+  
+  Lower values indicate better air quality.
+</Details>
 
-<BigValue 
-  data={station_data} 
-  value=avg_proximity
-  title="Average Proximity"
-  fmt="num0"
-  description="Average proximity sensor reading. Proximity values range from 0 (no object detected) to 2047 (object very close to sensor)."
-/>
+### Gas Sensor Notes
 
-## Particulate Matter Metrics
-
-<BigValue 
-  data={station_data} 
-  value=avg_pm2_5
-  title="PM2.5 (μg/m³)"
-  fmt="num1"
-  description="Average concentration of particulate matter smaller than 2.5μm. WHO guideline: 24-hour mean < 15 μg/m³. Primarily from combustion, organic compounds, and metals."
-/>
-
-<BigValue 
-  data={station_data} 
-  value=avg_pm10
-  title="PM10 (μg/m³)"
-  fmt="num1"
-  description="Average concentration of particulate matter smaller than 10μm. WHO guideline: 24-hour mean < 45 μg/m³. Includes dust, pollen, and mold spores."
-/>
-
-<BigValue 
-  data={station_data} 
-  value=avg_pm1
-  title="PM1.0 (μg/m³)"
-  fmt="num1"
-  description="Average concentration of ultrafine particulate matter smaller than 1.0μm. These can penetrate deep into lungs and potentially enter the bloodstream."
-/>
+<Details title='Understanding Gas Sensor Readings'>
+  For gas sensors, lower resistance values (kΩ) typically indicate higher gas concentrations:
+  
+  - **Oxidised gases**: Primarily measures nitrogen dioxide (NO2) and ozone (O3)
+  - **Reducing gases**: Primarily measures carbon monoxide (CO) and volatile organic compounds (VOCs)
+  - **NH3**: Measures ammonia concentration
+  
+  Typical alert thresholds:
+  - Oxidised gases: Below 50 kΩ may indicate elevated NO2 or O3
+  - Reducing gases: Below 100 kΩ may indicate elevated CO or VOCs
+  - NH3: Below 10 kΩ may indicate elevated ammonia levels
+</Details>

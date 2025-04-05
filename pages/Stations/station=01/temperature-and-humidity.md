@@ -333,39 +333,37 @@ GROUP BY day
 ORDER BY day
 ```
 
-<Grid cols=2>
-  <CalendarHeatmap 
-    data={daily_weather_for_calendar}
-    date=day
-    value=avg_temp
-    title="Daily Temperature Levels"
-    subtitle="Calendar view showing daily average temperature"
-    colorScale={[
-      ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],  // Cold: Dark blue to light blue (below 18°C)
-      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (18-25°C)
-      ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]     // Hot: Orange to red (above 25°C)
-    ]}
-    min=10
-    max=30
-    valueFmt="0.0"
-  />
+<CalendarHeatmap 
+  data={daily_weather_for_calendar}
+  date=day
+  value=avg_temp
+  title="Daily Temperature Levels"
+  subtitle="Calendar view showing daily average temperature"
+  colorScale={[
+    ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],  // Cold: Dark blue to light blue (below 18°C)
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (18-25°C)
+    ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]     // Hot: Orange to red (above 25°C)
+  ]}
+  min=10
+  max=30
+  valueFmt="0.0"
+/>
 
-  <CalendarHeatmap 
-    data={daily_weather_for_calendar}
-    date=day
-    value=avg_humidity
-    title="Daily Humidity Levels"
-    subtitle="Calendar view showing daily average humidity"
-    colorScale={[
-      ["rgb(255, 165, 0)", "rgb(255, 255, 0)"],  // Too dry: Orange to yellow (below 30%)
-      ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (30-60%)
-      ["rgb(0, 0, 255)", "rgb(138, 43, 226)"]    // Too humid: Blue to purple (above 60%)
-    ]}
-    min=0
-    max=100
-    valueFmt="0.0"
-  />
-</Grid>
+<CalendarHeatmap 
+  data={daily_weather_for_calendar}
+  date=day
+  value=avg_humidity
+  title="Daily Humidity Levels"
+  subtitle="Calendar view showing daily average humidity"
+  colorScale={[
+    ["rgb(255, 165, 0)", "rgb(255, 255, 0)"],  // Too dry: Orange to yellow (below 30%)
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (30-60%)
+    ["rgb(0, 0, 255)", "rgb(138, 43, 226)"]    // Too humid: Blue to purple (above 60%)
+  ]}
+  min=0
+  max=100
+  valueFmt="0.0"
+/>
 
 <Details title='About Calendar Views'>
     
