@@ -21,7 +21,7 @@ from station_01
   end={date_range_data[0].max_date}
   title="Select Date Range"
   presetRanges={['Last 7 Days', 'Last 30 Days', 'Month to Date', 'Year to Date', 'All Time']}
-  defaultValue={'Last 7 Days'}
+  defaultValue={'All Time'}
 />
 
 ## Light and Proximity Summary
