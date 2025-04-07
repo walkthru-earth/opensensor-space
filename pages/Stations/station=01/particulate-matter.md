@@ -36,7 +36,7 @@ select
   pm10
 from station_01
 where 
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   and (pm1 is not null or pm2_5 is not null or pm10 is not null)
 ```
 
@@ -143,7 +143,7 @@ select
   round(avg(pm10), 1) as pm10
 from station_01
 where 
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   and (pm1 is not null or pm2_5 is not null or pm10 is not null)
 group by 1
 order by 1
@@ -169,7 +169,7 @@ SELECT
   round(avg(particles_10um)) as "1.0μm"
 FROM station_01
 WHERE
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   and (particles_03um is not null or particles_05um is not null or particles_10um is not null)
 GROUP BY 1
 ORDER BY 1
@@ -193,7 +193,7 @@ SELECT
   round(avg(particles_100um)) as "10.0μm"
 FROM station_01
 WHERE
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   and (particles_25um is not null or particles_50um is not null or particles_100um is not null)
 GROUP BY 1
 ORDER BY 1
@@ -219,7 +219,7 @@ select
   round(avg(pm10), 1) as pm10
 from station_01
 where 
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   and (pm1 is not null or pm2_5 is not null or pm10 is not null)
 group by 1
 order by 1
@@ -260,7 +260,7 @@ FROM (
     avg(pm10) as pm10
   FROM station_01
   WHERE 
-    timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+    timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
     and (pm1 is not null or pm2_5 is not null or pm10 is not null)
   GROUP BY date_trunc('hour', timestamp)
 ) AS hourly_data
@@ -294,7 +294,7 @@ SELECT
   round(avg(pm10), 1) as avg_pm10
 FROM station_01
 WHERE
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   AND (pm1 IS NOT NULL OR pm2_5 IS NOT NULL OR pm10 IS NOT NULL)
 GROUP BY hour_of_day
 ORDER BY hour_of_day
@@ -348,7 +348,7 @@ SELECT
   round(avg(pm10), 1) as avg_pm10
 FROM station_01
 WHERE 
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   AND (pm1 IS NOT NULL OR pm2_5 IS NOT NULL OR pm10 IS NOT NULL)
 GROUP BY day
 ORDER BY day

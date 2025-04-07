@@ -34,8 +34,8 @@ select
   temperature,
   humidity
 from station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 ```
 
 ```sql temp_summary
@@ -105,8 +105,8 @@ SELECT
   round(avg(temperature), 1) as temperature,
   round(avg(humidity), 1) as humidity
 FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -185,8 +185,8 @@ WITH time_buckets AS (
     temperature,
     humidity
   FROM station_01
-  WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-    AND timestamp::date <= '${inputs.date_filter.end}'::date
+  WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+    AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 )
 
 SELECT
@@ -253,8 +253,8 @@ SELECT
     ELSE 'Night (22-6)'
   END as time_of_day
 FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 GROUP BY 
   date_trunc('hour', timestamp),
   extract('hour' from timestamp)
@@ -326,8 +326,8 @@ SELECT
   round(avg(temperature), 1) as avg_temp,
   round(avg(humidity), 1) as avg_humidity
 FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
   AND (temperature IS NOT NULL OR humidity IS NOT NULL)
 GROUP BY day
 ORDER BY day

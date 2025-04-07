@@ -33,7 +33,7 @@ select
   timestamp,
   pressure
 from station_01
-where timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+where timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
 ```
 
 ```sql summary_stats
@@ -80,8 +80,8 @@ SELECT
   extract('hour' from timestamp) as hour_of_day,
   round(avg(pressure), 1) as avg_pressure
 FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
-  AND timestamp::date <= '${inputs.date_filter.end}'::date
+WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+  AND timestamp::date <= ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -214,7 +214,7 @@ SELECT
   round(avg(pressure), 1) as avg_pressure
 FROM station_01
 WHERE 
-  timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   AND pressure IS NOT NULL
 GROUP BY day
 ORDER BY day
