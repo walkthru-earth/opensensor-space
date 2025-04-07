@@ -155,7 +155,7 @@ order by 1
   y={["pm1", "pm2_5", "pm10"]}
   title="Hourly Particulate Matter Concentrations"
   yAxisTitle="Concentration (micrograms/m³)"
-  xFmt="MMM dd, HH:mm"
+  xFmt="HH:mm"
 />
 
 ## Particle Count by Size
@@ -181,7 +181,7 @@ ORDER BY 1
   y={["0.3μm", "0.5μm", "1.0μm"]}
   title="Particle Counts - Small Particles"
   yAxisTitle="Particles per 0.1L of air"
-  xFmt="MMM dd, HH:mm"
+  xFmt="HH:mm"
 />
 
 ```sql large_particle_counts
@@ -205,7 +205,7 @@ ORDER BY 1
   y={["2.5μm", "5.0μm", "10.0μm"]}
   title="Particle Counts - Large Particles"
   yAxisTitle="Particles per 0.1L of air"
-  xFmt="MMM dd, HH:mm"
+  xFmt="HH:mm"
 />
 
 ## Daily Average Trends
@@ -231,7 +231,7 @@ order by 1
   y={["pm1", "pm2_5", "pm10"]}
   title="Daily Average Particulate Matter"
   yAxisTitle="Concentration (micrograms/m³)"
-  xFmt="MMM dd, HH:mm"
+  xFmt="MMM dd"
 />
 
 ## 24-Hour Mean Analysis & Air Quality Insights
@@ -275,7 +275,7 @@ ORDER BY hour
   title="24-Hour Rolling Mean of Particulate Matter"
   subtitle="Each point represents the average over the preceding 24 hours"
   yAxisTitle="Concentration (micrograms/m³)"
-  xFmt="MMM dd, HH:mm"
+  xFmt="HH:mm"
 >
   <ReferenceArea yMin={0} yMax={12} color="positive" label="Good (PM2.5)" opacity={0.1} labelPosition="right"/>
   <ReferenceArea yMin={12} yMax={35.4} color="warning" label="Moderate (PM2.5)" opacity={0.1} labelPosition="right"/>
@@ -308,7 +308,7 @@ ORDER BY hour_of_day
   subtitle="Shows when particulate matter tends to be highest and lowest"
   yAxisTitle="Concentration (micrograms/m³)"
   xAxisTitle="Hour of Day (24h)"
-  xFmt="MMM dd, HH:mm"
+  xFmt="0"
 >
   <ReferenceArea yMin=0 yMax=12 color="positive" label="Good (PM2.5)" opacity=0.1 labelPosition="right"/>
   <ReferenceArea yMin=12 yMax=35.4 color="warning" label="Moderate (PM2.5)" opacity=0.1 labelPosition="right"/>
