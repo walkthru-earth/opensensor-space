@@ -156,6 +156,15 @@ order by 1
   title="Hourly Particulate Matter Concentrations"
   yAxisTitle="Concentration (micrograms/m³)"
   xFmt="MMM dd, HH:mm"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 />
 
 ## Particle Count by Size
@@ -182,6 +191,15 @@ ORDER BY 1
   title="Particle Counts - Small Particles"
   yAxisTitle="Particles per 0.1L of air"
   xFmt="MMM dd, HH:mm"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 />
 
 ```sql large_particle_counts
@@ -206,6 +224,15 @@ ORDER BY 1
   title="Particle Counts - Large Particles"
   yAxisTitle="Particles per 0.1L of air"
   xFmt="MMM dd, HH:mm"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 />
 
 ## Daily Average Trends
@@ -232,6 +259,15 @@ order by 1
   title="Daily Average Particulate Matter"
   yAxisTitle="Concentration (micrograms/m³)"
   xFmt="MMM dd"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 />
 
 ## 24-Hour Mean Analysis & Air Quality Insights
@@ -276,6 +312,15 @@ ORDER BY hour
   subtitle="Each point represents the average over the preceding 24 hours"
   yAxisTitle="Concentration (micrograms/m³)"
   xFmt="MMM dd, HH:mm"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 >
   <ReferenceArea yMin={0} yMax={12} color="positive" label="Good (PM2.5)" opacity={0.1} labelPosition="right"/>
   <ReferenceArea yMin={12} yMax={35.4} color="warning" label="Moderate (PM2.5)" opacity={0.1} labelPosition="right"/>
@@ -309,9 +354,18 @@ ORDER BY hour_of_day
   yAxisTitle="Concentration (micrograms/m³)"
   xAxisTitle="Hour of Day (24h)"
   xFmt="0"
+  echartsOptions={{
+      dataZoom: {
+          show: true,
+          bottom: 10
+      },
+      grid: {
+          bottom: 50
+      }
+  }}
 >
   <ReferenceArea yMin=0 yMax=12 color="positive" label="Good (PM2.5)" opacity=0.1 labelPosition="right"/>
-  <ReferenceArea yMin=12 yMax=35.4 color="warning" label="Moderate (PM2.5)" opacity=0.1 labelPosition="right"/>
+  <ReferenceArea yMin=12 yMax=35.4 color="warning" label="Moderate to concerning (PM2.5)" opacity=0.1 labelPosition="right"/>
   <ReferenceArea yMin=35.4 yMax=55.4 color="negative" label="Unhealthy for Sensitive Groups (PM2.5)" opacity=0.1 labelPosition="right"/>
 </LineChart>
 
