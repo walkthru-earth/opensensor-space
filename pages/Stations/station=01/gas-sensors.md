@@ -296,6 +296,7 @@ SELECT
 FROM station_01
 WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
 GROUP BY 
   date_trunc('hour', timestamp),
   extract('hour' from timestamp)
