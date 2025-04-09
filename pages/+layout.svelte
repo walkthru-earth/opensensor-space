@@ -28,12 +28,13 @@
 
 <EvidenceDefaultLayout 
   {data} 
-  title="Cloud Native Weather Station Dashboard"
+  title="Cloud Native Weather Station"
   builtWithEvidence={false}
   hideBreadcrumbs={true}
   githubRepo="https://github.com/Youssef-Harby"
   xProfile="https://x.com/youssef_7arby"
   blueskyProfile="https://bsky.app/profile/youssefharby.com"
+  fullWidth={true}
 >
   <slot slot="content" />
 </EvidenceDefaultLayout>

@@ -1,7 +1,7 @@
 ---
 sidebar_position: 1
-title: Cloud Native DIY Home Weather Station
-description: Build a cloud-native weather station
+title: Cloud Native Weather Station
+description: Build a cloud-native weather station using parquet and object storage from the sensor to the dashboard
 hide_title: false
 ---
 
