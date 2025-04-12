@@ -340,13 +340,15 @@ ORDER BY day
   title="Daily Temperature Levels"
   subtitle="Calendar view showing daily average temperature"
   colorScale={[
-    ["rgb(0, 0, 255)"],  // Cold: Dark blue to light blue (below 18°C)
-    ["rgb(52, 194, 255)"],     // Hot: Orange (to 25°C)
-    ["rgb(0, 128, 0)"],  // Comfort zone: Dark green to light green (18-25°C)
-    ["rgb(255, 165, 0)"],     // Very hot: Orange (above 25°C)
-    ["rgb(255, 0, 0)"]     // Very hot: Red (above 25°C)
+    ["rgb(0, 0, 255)"],
+    ["rgb(52, 194, 255)"],
+    ["rgb(106, 255, 235)"],
+    ["rgb(0, 128, 0)"],
+    ["rgb(255, 244, 89)"],
+    ["rgb(255, 165, 0)"],
+    ["rgb(255, 0, 0)"]
   ]}
-  min=-20
+  min=-15
   max=50
   valueFmt="0.0"
 />
@@ -358,9 +360,9 @@ ORDER BY day
   title="Daily Humidity Levels"
   subtitle="Calendar view showing daily average humidity"
   colorScale={[
-    ["rgb(255, 165, 0)", "rgb(255, 255, 0)"],  // Too dry: Orange to yellow (below 30%)
-    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"],  // Comfort zone: Dark green to light green (30-60%)
-    ["rgb(0, 0, 255)", "rgb(138, 43, 226)"]    // Too humid: Blue to purple (above 60%)
+    ["rgb(255, 165, 0)"],
+    ["rgb(0, 128, 0)"],
+    ["rgb(0, 0, 255)"]
   ]}
   min=0
   max=100
