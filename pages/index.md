@@ -105,7 +105,7 @@ After a year of working with cloud-native technologies, I had a realization: **W
 This insight led me to reimagine my weather station with a truly cloud-native approach.
 
 <Image 
-    url="/image.png" 
+    url="/20250408-cloud-native-weather-station1.png" 
     description="My DIY weather station cloud-native diagram"
     border=true 
     class="p-2"
