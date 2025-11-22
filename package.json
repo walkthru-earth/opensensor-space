@@ -1,8 +1,8 @@
 {
-  "name": "my-evidence-project",
+  "name": "opensensor-space",
   "version": "0.0.1",
   "scripts": {
-    "build": "EVIDENCE_BUILD_DIR=./build/my-weather-station evidence build",
+    "build": "EVIDENCE_BUILD_DIR=./build/opensensor-space evidence build",
     "build:strict": "evidence build:strict",
     "dev": "evidence dev --open /",
     "test": "evidence build",
@@ -17,18 +17,28 @@
   },
   "type": "module",
   "dependencies": {
-    "@evidence-dev/core-components": "^5.2.2",
-    "@evidence-dev/csv": "^1.0.14",
-    "@evidence-dev/duckdb": "^1.0.13",
-    "@evidence-dev/evidence": "^40.1.2",
+    "@evidence-dev/core-components": "^5.4.0",
+    "@evidence-dev/csv": "^1.0.15",
+    "@evidence-dev/duckdb": "^2.0.0",
+    "@evidence-dev/evidence": "^40.1.6",
     "@evidence-dev/source-javascript": "^0.0.3",
-    "@evidence-dev/sqlite": "^2.0.7",
-    "posthog-js": "^1.240.0"
+    "@evidence-dev/sqlite": "^2.0.8",
+    "@evidence-dev/tailwind": "^3.1.2",
+    "caniuse-lite": "^1.0.30001756",
+    "posthog-js": "^1.297.2"
   },
   "overrides": {
-    "jsonwebtoken": "9.0.0",
-    "trim@<0.0.3": ">0.0.3",
-    "sqlite3": "5.1.5",
-    "axios": "^1.7.4"
+    "jsonwebtoken": ">=9.0.2",
+    "jsonwebtoken@<9.0.0": ">=9.0.2",
+    "trim@<0.0.3": ">=0.0.3",
+    "sqlite3": ">=5.1.7",
+    "axios": ">=1.13.2",
+    "undici@<5.19.1": ">=5.19.1",
+    "got@<11.8.5": ">=11.8.5",
+    "nth-check@<2.0.1": ">=2.0.1",
+    "fast-xml-parser": ">=4.4.1",
+    "dset": ">=3.1.4",
+    "cookie": ">=0.7.1",
+    "serialize-javascript": ">=6.0.2"
   }
 }
