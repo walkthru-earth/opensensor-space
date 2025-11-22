@@ -1,19 +1,19 @@
 ---
 sidebar_position: 1
-title: Cloud Native Weather Station
-description: Build a cloud-native weather station using parquet and object storage from the sensor to the dashboard
+title: opensensor.space
+description: Cloud-native sensor data platform using Parquet and object storage - scalable from edge to dashboard for any IoT sensor
 hide_title: false
 ---
 
 <LastRefreshed/>
 
-<Details title='About this dashboard'>
-  This dashboard showcases a DIY weather station built using cloud-native principles. Sensor data is collected from a Raspberry Pi Zero W with an Enviro+ sensor and stored directly in Parquet format on cloud storage, then visualized with Evidence.dev and DuckDB-wasm.
+<Details title='About this platform'>
+  opensensor.space is a cloud-native sensor data platform built on open standards. Sensor data flows from edge devices (Raspberry Pi, ESP32, or any IoT hardware) directly to cloud storage in Parquet format, then visualized with Evidence.dev and DuckDB-wasm. This reference implementation demonstrates environmental monitoring, but the architecture scales to any sensor type.
 </Details>
 
-<Image 
-    url="/icon-512.png" 
-    description="My DIY weather station cloud-native diagram"
+<Image
+    url="/icon-512.png"
+    description="opensensor.space cloud-native architecture"
     width="300"
     height="300"
 />
@@ -32,7 +32,7 @@ hide_title: false
     </a>
 </div>
 
-## Weather Station Dashboards
+## Environmental Monitoring Dashboards
 
 <Grid cols=2>
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-green-50 dark:bg-green-900/30">
@@ -96,24 +96,30 @@ hide_title: false
     </div>
 </Grid>
 
-## The Old Approach
+## From Traditional IoT to Cloud-Native
 
-When I first built my DIY weather station last year early (2024), I followed a traditional approach - a Raspberry Pi Zero W with an Enviro+ sensor connected to an Intel NUC that served as a data hub. The NUC collected sensor data and stored it in a TimeScaleDB database. It worked, but it wasn't as elegant or efficient as it could be. If the hub disconnected for any reason - like a power outage - I lost all the readings and measurements sent via MQTT from my sensors.
+Traditional IoT architectures typically rely on local hubs - a sensor device sending data via MQTT or HTTP to a central server (often running databases like InfluxDB or TimescaleDB). This works, but introduces complexity: multiple layers of infrastructure, potential data loss during outages, and scaling challenges as sensor networks grow.
 
-After a year of working with cloud-native technologies, I had a realization: **Why am I using extra energy and resources when my Raspberry Pi Zero W already has WiFi?**
+### Our First Trial: The Traditional Approach
 
-This insight led me to reimagine my weather station with a truly cloud-native approach.
+In early 2024, we built our first environmental monitoring station following the conventional approach - a Raspberry Pi Zero W with an Enviro+ sensor connected to an Intel NUC that served as a data hub. The NUC collected sensor data and stored it in a TimeScaleDB database. It worked, but it wasn't as elegant or efficient as it could be. If the hub disconnected for any reason - like a power outage - all the readings and measurements sent via MQTT from the sensors would be lost.
 
-<Image 
-    url="/20250408-cloud-native-weather-station1.png" 
-    description="My DIY weather station cloud-native diagram"
-    border=true 
+After a year of experimenting with cloud-native technologies, we had a realization: **Why use extra energy and resources when the Raspberry Pi Zero W already has WiFi?**
+
+This insight became the foundation of opensensor.space - eliminating unnecessary infrastructure by leveraging what edge devices already have: **network connectivity and storage capabilities**.
+
+Instead of managing databases and message brokers, sensors write directly to cloud object storage in open formats. This trial taught us that simplicity scales better than complexity.
+
+<Image
+    url="/20250408-cloud-native-weather-station1.png"
+    description="opensensor.space cloud-native architecture diagram"
+    border=true
     class="p-2"
 />
 
-## The Cloud-Native Solution
+## Architecture Overview
 
-Explore the parquet files using DuckDB:
+This reference implementation uses environmental sensors, but the pattern works for any IoT data source. Explore the data structure using DuckDB:
 ```sql
 SUMMARIZE 
     SELECT 
@@ -127,9 +133,9 @@ SUMMARIZE
 SUMMARIZE SELECT * FROM station_01
 ```
 
-<DataTable 
+<DataTable
   data={latest_data_schema}
-  title="Weather Station Sensor Statistics"
+  title="Sensor Data Statistics"
   subtitle="Min, max, average, and other key metrics for all sensor readings"
   rows="all"
   search={true}
@@ -149,9 +155,11 @@ SUMMARIZE SELECT * FROM station_01
   <Column id="count" title="# Readings" width={100} contentType="colorscale" colorScale="#90caf9" />
 </DataTable>
 
-Instead of relying on a local database server, I now stream sensor measurements directly from the Raspberry Pi to cloud storage in **Parquet** format. This approach eliminates unnecessary infrastructure while maintaining all the functionality I need.
+Instead of relying on local database servers, edge devices stream sensor measurements directly to cloud storage in **Parquet** format. This approach eliminates unnecessary infrastructure while maintaining full functionality and enabling massive scale.
 
-The current implementation:
+### How It Works
+
+The reference implementation:
 
 1. A Python script runs as a **cron job** every 5 minutes on the Raspberry Pi
 2. Each Parquet file contains 1-second interval measurements from the Enviro+ sensor
@@ -162,11 +170,11 @@ The current implementation:
 4. A GitHub Actions workflow runs daily to aggregate the small 5-minute files into consolidated daily files, making queries more efficient and reducing the number of small files
 5. Data is queried directly using [**DuckDB-wasm**](https://duckdb.org/docs/stable/clients/wasm/overview.html) in the browser with [Evidence.dev](https://evidence.dev), creating a truly cloud-native dashboard without any intermediate servers
 
-All Parquet files are hosted on [Source Cooperative](https://source.coop), a [Radiant Earth](https://radiant.earth) initiative that provides free S3-compatible object storage for open datasets. This allows me to share my weather station data openly while avoiding storage costs.
+All Parquet files are hosted on [Source Cooperative](https://source.coop), a [Radiant Earth](https://radiant.earth) initiative that provides free S3-compatible object storage for open datasets. This allows us to share sensor data openly while avoiding storage costs.
 
-## Sensor Capabilities
+## Example: Environmental Monitoring
 
-The Enviro+ sensor pack collects a wealth of environmental data:
+This reference deployment uses the Enviro+ sensor pack to demonstrate the platform's capabilities with environmental data:
 
 - Temperature
 - Pressure
@@ -188,44 +196,63 @@ You can find more information about the Enviro+ here:
 - [Getting Started with Enviro+](https://learn.pimoroni.com/article/getting-started-with-enviro-plus)
 - [Enviro+ Python Library](https://github.com/pimoroni/enviroplus-python)
 
-## Why This Matters
+## Platform Benefits
 
-This project demonstrates how edge devices can participate in cloud-native architectures without complex infrastructure. By storing data in open formats like Parquet and using client-side processing with tools like DuckDB and Evidence, we can build sophisticated monitoring systems that are:
+opensensor.space demonstrates how IoT devices can participate in cloud-native architectures without complex infrastructure. By storing data in open formats like Parquet and using client-side processing with tools like DuckDB and Evidence, sensor networks become:
 
-- **Energy efficient** - minimal hardware requirements
-- **Cost effective** - no servers to maintain
-- **Scalable** - easily add more sensors or locations
-- **Open** - data in standard formats accessible to many tools
-- **Resilient** - works offline without internet connectivity, synchronizing collected data to cloud storage when connection is restored
+- **Minimum carbon footprint** - Edge processing reduces data transmission by 60-90%, significantly cutting energy consumption and CO2 emissions compared to continuous cloud streaming. With data centers projected to consume 33% of ICT industry electricity by 2025, edge-first architectures are critical for sustainable IoT
+- **Cost effective** - No databases, message brokers, or backend servers to manage
+- **Infinitely scalable** - Object storage scales from single sensors to millions
+- **Hardware agnostic** - Works with Raspberry Pi, ESP32, Arduino, or any device that can write files
+- **Resilient** - Offline-first architecture with automatic sync when connectivity returns
+- **Open** - Standard formats (Parquet, S3) accessible to any analytics tool
+- **Energy efficient** - Minimal computational overhead on edge devices, ideal for battery or solar-powered deployments
 
-The stations are designed to operate autonomously even when offline. When internet connectivity is unavailable, the system continues collecting and storing sensor readings locally in Parquet files. Once the connection is restored, the system automatically synchronizes the accumulated data files to the cloud object storage, ensuring no measurements are lost during network outages.
+Sensors operate autonomously even when offline. When internet connectivity is unavailable, the system continues collecting and storing readings locally in Parquet files. Once connection is restored, accumulated data automatically synchronizes to cloud object storage - ensuring zero data loss during network outages.
 
-## What's Next
+## Roadmap
 
-My next phase for this project includes developing mobile weather stations that can collect environmental data on the move:
+We're expanding opensensor.space to support diverse sensor deployments and use cases:
 
-1. **Outdoor mobile stations** - I plan to deploy additional weather stations in the coming weeks that can be placed outdoors in various locations
-2. **GPS integration** - Adding GPS modules to track the exact location of readings, allowing for spatial mapping of environmental conditions
-3. **Vehicle-mounted sensors** - Installing a unit in my car to collect data while driving through different areas, creating a mobile environmental monitoring system
-4. **Offline-first approach** - These mobile stations will operate completely offline while collecting data, then automatically upload their measurements when reconnected to my home WiFi network
+### Mobile & Edge Deployments
+1. **LoRa mesh networks** - Multiple sensors communicate via LoRa modules with one designated gateway sensor responsible for WiFi sync to cloud storage. Recent research shows this architecture increases packet delivery ratios to 73.78% for sensors beyond 5.8km from the gateway, enabling large-area coverage with minimal infrastructure
+2. **GPS-enabled sensors** - Location tracking for mobile sensor networks
+3. **Vehicle-mounted units** - Moving sensors for spatial data collection (air quality mapping, traffic analysis, etc.)
+4. **Offline-first edge devices** - Collect data continuously, sync when connectivity returns
+5. **Ultra-low-power sensors** - ESP32/LoRaWAN implementations optimized for battery or solar power, minimizing carbon footprint
 
-This approach is ideal for applications where real-time data transmission isn't critical. The stations will collect comprehensive environmental data continuously, regardless of connectivity, and batch upload when they return to network coverage - perfect for distributed environmental monitoring across varying locations.
+### Platform Enhancements
+- **Multi-sensor support** - Reference implementations for industrial sensors, agricultural IoT, smart city applications
+- **Adaptive sampling** - Intelligent data collection based on event triggers or anomaly detection
+- **Client-side analytics** - Advanced DuckDB-wasm visualizations and real-time processing
+- **Edge ML** - TinyML integration for on-device inference before cloud sync
 
-I'm also continuing to optimize the current setup by:
-
-- Fine-tuning the upload intervals to balance real-time data needs with S3 request costs
-- Developing more sophisticated client-side visualizations
-- Exploring integration with other cloud-native geospatial tools
+### Developer Experience
+- **SDK libraries** - Python, JavaScript, and Rust libraries for easy integration
+- **Terraform modules** - Infrastructure-as-code for cloud storage setup
+- **Docker containers** - Containerized edge runtimes for easy deployment
 
 <Alert status="success">
-  <strong>Interested in building your own station?</strong> Check out the <a href="/join-network">Join the Weather Station Network</a> page for instructions on how to contribute to this project!
+  <strong>Ready to deploy your sensors?</strong> Check out the <a href="/join-network">Join the Sensor Network</a> page for instructions on how to contribute to this project!
 </Alert>
 
 This dashboard is built with [Evidence](https://evidence.dev), which allows us to query and visualize the Parquet data directly in the browser - no backend required!
 
 ## Resources
 
-- [Project Repository](https://github.com/Youssef-Harby/parquet-edge)
+- [Project Repository](https://github.com/walkthru-earth/opensensor-space-edge)
 - [Data Repository](https://source.coop/youssef-harby/weather-station-realtime-parquet/)
 
-I'd love to hear your feedback and suggestions on optimizing this setup to make edge cloud-native computing more practical!
+### Research & Further Reading
+
+**LoRa Mesh Networks:**
+- [Performance Evaluation of a Mesh-Topology LoRa Network](https://www.mdpi.com/1424-8220/25/5/1602) - Recent 2025 research on mesh architectures
+- [LoRa-Based Mesh Network for Peer-to-Peer Long-Range Communication](https://pmc.ncbi.nlm.nih.gov/articles/PMC8272137/)
+- [RAKwireless Gateway Mesh Solution](https://www.rakwireless.com/en-us/expand-lorawan-network-with-gateway-mesh)
+
+**Edge Computing & Sustainability:**
+- [Edge Computing and Sustainability: Reducing Carbon Footprints](https://snuc.com/blog/edge-computing-and-sustainability/)
+- [Edge vs. Cloud in IoT: Optimizing Performance and Cost](https://spicefactory.co/blog/2025-07-24-edge-vs-cloud-in-iot-optimizing-performance-and-cost-at-scale/)
+- [Edge Computing for Sustainable Future](https://objectbox.io/why-do-we-need-edge-computing-for-a-sustainable-future/)
+
+We'd love to hear your feedback and suggestions on building sustainable, scalable sensor networks!

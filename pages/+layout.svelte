@@ -14,10 +14,10 @@
   onMount(() => {
     if (browser) {
       posthog.init(
-        'phc_OuE8MVpDq1DjpI2dX0JnHK82wOEhdIhXjk57ZeFNU3T', // Your PostHog API Key
+        'phc_DD0beBVtIyKyuQ9wIlmRHZmZ6YE4KEhpMTJdXCjckvM', // Your PostHog API Key
         {
-          api_host: 'https://us.i.posthog.com',
-          person_profiles: 'always', // Track all users including anonymous ones
+          api_host: 'https://eu.i.posthog.com',
+          person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
           capture_pageview: false, // We'll handle pageviews manually with the SvelteKit router
           capture_pageleave: false, // We'll handle pageleaves manually with the SvelteKit router
           autocapture: true, // Enable autocapture for clicks, form submissions, etc.
@@ -89,12 +89,11 @@
 
 <EvidenceDefaultLayout 
   {data} 
-  title="Cloud Native Weather Station"
+  title="opensensor.space"
   builtWithEvidence={false}
   hideBreadcrumbs={true}
-  githubRepo="https://github.com/Youssef-Harby"
-  xProfile="https://x.com/youssef_7arby"
-  blueskyProfile="https://bsky.app/profile/youssefharby.com"
+  githubRepo="https://github.com/walkthru-earth/"
+  blueskyProfile="https://bsky.app/profile/walkthru-earth.bsky.social"
   fullWidth={true}
 >
   <slot slot="content" />

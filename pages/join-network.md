@@ -1,22 +1,26 @@
 ---
-title: Join the Weather Station Network
-description: Build your own cloud-native weather station and contribute to the network
+title: Join the Sensor Network
+description: Deploy your own cloud-native sensors and contribute to opensensor.space
 ---
 
-This project is designed to be easily replicated and expanded into a community-driven environmental monitoring network. I welcome contributions from anyone interested in setting up their own weather station and sharing the data.
+opensensor.space is designed to be easily replicated and expanded into a community-driven sensor network. We welcome contributions from anyone interested in deploying sensors - whether for environmental monitoring, industrial IoT, smart agriculture, or any other use case - and sharing data using open standards.
 
 ## How to Participate
 
-1. **Build your own station** - Follow the setup instructions in this page
-2. **Choose your storage** - Use [Source Cooperative](https://source.coop) or your own S3-compatible storage
-3. **Submit a PR** - Add your station to the network with your station ID (UUID), location coordinates, and storage URL
-4. **Share your insights** - Contribute dashboard improvements or custom visualizations
+1. **Deploy your sensors** - Follow the setup instructions below for the reference implementation, or adapt to your sensor hardware
+2. **Choose your storage** - Use [Source Cooperative](https://source.coop) for open data or your own S3-compatible storage
+3. **Submit a PR** - Add your sensor deployment to the network with station ID (UUID), sensor type, location coordinates, and storage URL
+4. **Share your insights** - Contribute dashboard improvements, custom visualizations, or reference implementations for new sensor types
 
 ## Benefits of Contributing
 
-By creating a distributed network of weather stations using this architecture, we can build a more comprehensive picture of environmental conditions across different locations while maintaining individual ownership of the data collection points.
+By creating a distributed sensor network using this architecture, we can build comprehensive data collection systems across different locations and use cases while maintaining individual ownership of data collection infrastructure. The platform supports various applications: environmental monitoring, industrial IoT, smart agriculture, urban analytics, and more.
 
-## Required Hardware Components
+## Reference Implementation: Environmental Monitoring
+
+This example demonstrates the platform using environmental sensors. You can adapt this architecture to any sensor type - industrial, agricultural, medical, or custom IoT devices.
+
+### Hardware Components for Reference Setup
 
 <Grid cols=2>
   <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition">
@@ -70,7 +74,9 @@ By creating a distributed network of weather stations using this architecture, w
 
 ## Technical Requirements
 
-### Hardware Requirements
+### Hardware Options
+
+**For the Reference Environmental Setup:**
 - Raspberry Pi Zero 2 W (or any Raspberry Pi model)
 - Pimoroni Enviro+ Air Quality sensor package
 - PMS5003 Particulate Matter sensor (recommended for air quality monitoring)
@@ -78,9 +84,15 @@ By creating a distributed network of weather stations using this architecture, w
 - Power supply for Raspberry Pi
 - Optional: GPS module for mobile installations (for location tracking)
 
-### Software Setup
+**For Custom Sensor Deployments:**
+- Any edge device with network connectivity (ESP32, Arduino, Raspberry Pi, industrial PLCs, etc.)
+- Your sensor hardware (temperature, pressure, vibration, chemical, optical, etc.)
+- Storage (SD card, eMMC, or local SSD for offline buffering)
+- Power supply appropriate for deployment (mains, battery, solar, PoE)
 
-To get your weather station up and running, you'll need to:
+### Software Setup (Reference Implementation)
+
+For the environmental monitoring reference setup, follow these steps:
 
 1. **Install the Official Enviro+ Python Library** - Set up the official [Enviro+ Python environment](https://github.com/pimoroni/enviroplus-python) first following their installation instructions:
    ```bash
@@ -95,7 +107,7 @@ To get your weather station up and running, you'll need to:
    ```
 
 3. **Set Up Your Own Copy of the Parquet-Edge Project**:
-   - First, fork the [parquet-edge repository](https://github.com/Youssef-Harby/parquet-edge/) to your own GitHub account
+   - First, fork the [opensensor-space-edge repository](https://github.com/walkthru-earth/opensensor-space-edge/) to your own GitHub account
    - Clone your forked repository to your Raspberry Pi
    - Customize the configuration:
      - Update the station ID in `config.py` (e.g., change from "01" to your unique station ID)
@@ -108,15 +120,17 @@ To get your weather station up and running, you'll need to:
 
 #### How the Data Collection System Works
 
-The parquet-edge repository handles the following aspects of weather station operation:
+The opensensor-space-edge repository provides a reference implementation for sensor operation:
 
-1. **Sensor Data Collection**: Reads data from all Enviro+ sensors at 1-second intervals
-2. **Local Storage**: Writes data to local Parquet files in the proper partitioning structure
+1. **Sensor Data Collection**: Reads data from sensors at configurable intervals (default: 1-second for environmental data)
+2. **Local Storage**: Writes data to local Parquet files in partitioned structure
 3. **Cloud Synchronization**: Uses built-in GitHub Actions workflows to sync data to your S3-compatible storage
 4. **Offline Operation**: Continues collecting data when internet is unavailable and syncs when connection is restored
 5. **Aggregation**: Creates daily aggregated files for more efficient historical analysis
 
-After your weather station is up and running, you can send an email with your station info to me@youssefharby.com and I will add it to a stations_db.parquet which includes all the stations data to be used in this dashboard.
+**Custom Implementations:** You can adapt this pattern to any programming language (Python, JavaScript, Rust, C++) and any sensor protocol (I2C, SPI, Modbus, UART, etc.). The core principle remains: collect data locally in Parquet format, then batch sync to object storage.
+
+After your sensor deployment is up and running, you can send an email with your deployment info to hi@walkthru.earth and we will add it to the sensors_db.parquet registry for network-wide discovery and visualization.
 
 ### Data Structure Guidelines
 
@@ -167,8 +181,12 @@ This structure is used for all the historical dashboards and trend analysis.
 
 * Use a unique identifier for your station (UUID) instead of simple identifiers like "02" or "03"
 
-## Mobile Stations
+## Advanced Deployments
 
-Coming soon...
+### Mobile Sensors
+Support for GPS-enabled mobile sensor deployments is coming soon, enabling spatial data collection from vehicles, drones, and portable monitoring units.
+
+### LoRa Mesh Networks
+We're developing reference implementations for LoRa mesh architectures where multiple sensors communicate with each other, and one designated gateway sensor handles WiFi synchronization to cloud storage. This enables large-area coverage with minimal infrastructure and ultra-low power consumption.
 
 This dashboard is built with [Evidence](https://evidence.dev), which allows us to query and visualize the Parquet data directly in the browser - no backend required!
