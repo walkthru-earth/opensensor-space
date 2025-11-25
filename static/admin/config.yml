@@ -11,7 +11,9 @@ backend:
 publish_mode: editorial_workflow
 
 # Branding
-logo_url: https://opensensor.space/logo/weather_parquet.svg
+logo:
+  src: https://opensensor.space/logo/weather_parquet.svg
+  show_in_header: true
 locale: en
 
 # Point back to the main Evidence site
