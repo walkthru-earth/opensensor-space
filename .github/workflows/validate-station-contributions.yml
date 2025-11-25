@@ -1,0 +1,131 @@
+name: Validate Station Contributions
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'sources/stations/stations.csv'
+
+jobs:
+  validate-stations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Get base branch CSV
+        run: |
+          git fetch origin main
+          git show origin/main:sources/stations/stations.csv > /tmp/base_stations.csv || echo "station_id" > /tmp/base_stations.csv
+
+      - name: Install DuckDB
+        run: |
+          curl -LO https://github.com/duckdb/duckdb/releases/download/v1.4.2/duckdb_cli-linux-amd64.zip
+          unzip duckdb_cli-linux-amd64.zip
+          chmod +x duckdb
+          sudo mv duckdb /usr/local/bin/
+          rm -f duckdb_cli-linux-amd64.zip
+
+      - name: Extract new pending stations
+        id: extract
+        run: |
+          # Find new pending stations not in base
+          duckdb -c "
+            CREATE TABLE base AS SELECT station_id FROM read_csv_auto('/tmp/base_stations.csv');
+            CREATE TABLE current AS SELECT * FROM read_csv_auto('sources/stations/stations.csv');
+            COPY (
+              SELECT station_id, station_name, storage_url
+              FROM current
+              WHERE status = 'pending'
+                AND station_id NOT IN (SELECT station_id FROM base)
+            ) TO '/tmp/new_stations.csv' (HEADER);
+          "
+
+          # Check if there are new stations
+          if [ $(wc -l < /tmp/new_stations.csv) -le 1 ]; then
+            echo "No new pending stations to validate"
+            echo "has_new=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found new pending stations"
+            echo "has_new=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate S3 storage URLs
+        if: steps.extract.outputs.has_new == 'true'
+        id: validate
+        run: |
+          echo "## Station Validation Results" > /tmp/validation_report.md
+          echo "" >> /tmp/validation_report.md
+
+          ALL_VALID=true
+          VALIDATED_IDS=""
+
+          # Skip header and process each station
+          tail -n +2 /tmp/new_stations.csv | while IFS=, read -r station_id station_name storage_url; do
+            # Remove quotes if present
+            storage_url=$(echo "$storage_url" | tr -d '"')
+            station_name=$(echo "$station_name" | tr -d '"')
+
+            echo "Validating: $station_name ($station_id)"
+            echo "Storage URL: $storage_url"
+
+            # Check if S3 path exists (public bucket, no credentials needed)
+            if aws s3 ls "$storage_url" --no-sign-request 2>/dev/null | head -1; then
+              echo "✅ **$station_name** - Storage verified" >> /tmp/validation_report.md
+              echo "$station_id" >> /tmp/validated_ids.txt
+            else
+              echo "❌ **$station_name** - Storage URL not accessible: \`$storage_url\`" >> /tmp/validation_report.md
+              ALL_VALID=false
+            fi
+          done
+
+          if [ "$ALL_VALID" = true ] && [ -f /tmp/validated_ids.txt ]; then
+            echo "all_valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "all_valid=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update status to approved
+        if: steps.validate.outputs.all_valid == 'true'
+        run: |
+          # Update validated stations from pending to approved
+          if [ -f /tmp/validated_ids.txt ]; then
+            while read -r station_id; do
+              sed -i "s/\(${station_id}.*\),pending$/\1,approved/" sources/stations/stations.csv
+            done < /tmp/validated_ids.txt
+
+            echo "" >> /tmp/validation_report.md
+            echo "✅ **All stations validated and auto-approved!**" >> /tmp/validation_report.md
+          fi
+
+      - name: Commit approved status
+        if: steps.validate.outputs.all_valid == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sources/stations/stations.csv
+          git diff --staged --quiet || git commit -m "chore: auto-approve validated stations"
+          git push
+
+      - name: Comment on PR
+        if: steps.extract.outputs.has_new == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('/tmp/validation_report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
