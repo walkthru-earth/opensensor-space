@@ -5,6 +5,7 @@ backend:
   name: github
   repo: walkthru-earth/opensensor-space
   branch: contributions-clean
+  open_authoring: true
 
 # Branding
 logo_url: https://opensensor.space/logo/weather_parquet.svg
