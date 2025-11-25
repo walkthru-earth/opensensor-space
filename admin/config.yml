@@ -38,11 +38,10 @@ collections:
     identifier_field: station_id
     summary: "{{station_name}} ({{sensor_type}}) - {{station_type}}"
     sortable_fields:
-      fields:
-        - station_name
-        - sensor_type
-        - station_type
-        - submitted_at
+      - station_name
+      - sensor_type
+      - station_type
+      - submitted_at
     fields:
       - name: station_id
         label: Station ID (UUID)
