@@ -7,6 +7,8 @@ backend:
   branch: contributions-clean
   open_authoring: true
 
+publish_mode: editorial_workflow
+
 # Branding
 logo_url: https://opensensor.space/logo/weather_parquet.svg
 locale: en
