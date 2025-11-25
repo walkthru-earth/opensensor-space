@@ -27,6 +27,8 @@ collections:
     label_singular: Station
     folder: content/stations
     create: true
+    extension: yml
+    format: yaml-frontmatter
     slug: "{{fields.station_id}}"
     identifier_field: station_id
     summary: "{{station_name}} ({{sensor_type}}) - {{station_type}}"
