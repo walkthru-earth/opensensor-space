@@ -27,7 +27,7 @@ collections:
     label_singular: Station
     folder: content/stations
     create: true
-    extension: yml
+    extension: md
     format: yaml-frontmatter
     slug: "{{fields.station_id}}"
     identifier_field: station_id
