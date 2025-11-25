@@ -33,6 +33,7 @@ jobs:
           unzip duckdb_cli-linux-amd64.zip
           chmod +x duckdb
           sudo mv duckdb /usr/local/bin/
+          rm -f duckdb_cli-linux-amd64.zip
 
       - name: Merge YAML stations into CSV
         run: duckdb -c ".read scripts/merge-station-contributions.sql"
@@ -57,6 +58,8 @@ jobs:
           branch: station-contributions-pr
           base: main
           delete-branch: true
+          add-paths: |
+            sources/stations/stations.csv
           labels: |
             stations
             contribution
