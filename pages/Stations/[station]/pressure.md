@@ -2,17 +2,30 @@
 title: Atmospheric Pressure
 ---
 
+```sql station_info
+SELECT * FROM station_registry WHERE station_id = '${params.station}'
+```
+
+# {station_info[0].station_name} - Atmospheric Pressure
+
 <LastRefreshed/>
 
 <Details title='About this dashboard'>
-  This dashboard analyzes atmospheric pressure data from My DIY weather station (Cloud Native way). You can select a date range to view specific data.
+
+This dashboard analyzes atmospheric pressure data from **{station_info[0].station_name}**. You can select a date range to view specific data.
+
+- **Location**: {station_info[0].latitude}, {station_info[0].longitude}
+- **Sensor Type**: {station_info[0].sensor_type}
+- **Environment**: {station_info[0].station_type}
+
 </Details>
 
 ```sql date_range_data
-select 
+select
   (min(timestamp)) as min_date,
   (max(timestamp)) as max_date
-from station_01
+from all_stations
+where station_id = '${params.station}'
 ```
 
 <DateRange
@@ -32,8 +45,9 @@ from station_01
 select
   timestamp,
   pressure
-from station_01
-where timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+from all_stations
+where station_id = '${params.station}'
+  and timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
 ```
 
 ```sql summary_stats
@@ -51,25 +65,27 @@ select
 from ${main_data}
 ```
 
-<BigValue 
-  data={summary_stats} 
+<BigValue
+  data={summary_stats}
   value=pressure_range
-  title="Pressure Range" 
+  title="Pressure Range"
   subtitle=pressure_avg
   backgroundColor=pressure_bg_color
 />
 
 <Details title="Understanding Atmospheric Pressure">
-  - **Atmospheric Pressure** is the force exerted by the weight of air in the atmosphere.
-  - Measured in hectopascals (hPa), where 1 hPa = 100 Pascals.
-  - Standard sea level pressure is 1013.25 hPa.
-  
-  ### Pressure Ranges
-  - &lt;1000 hPa: Low pressure (often associated with storms, rain)
-  - 1000-1025 hPa: Normal pressure range
-  - >1025 hPa: High pressure (typically clear, stable weather)
-  
-  Changes in pressure can help forecast weather - falling pressure often indicates approaching storms, while rising pressure suggests improving conditions.
+
+- **Atmospheric Pressure** is the force exerted by the weight of air in the atmosphere.
+- Measured in hectopascals (hPa), where 1 hPa = 100 Pascals.
+- Standard sea level pressure is 1013.25 hPa.
+
+### Pressure Ranges
+- Below 1000 hPa: Low pressure (often associated with storms, rain)
+- 1000-1025 hPa: Normal pressure range
+- Above 1025 hPa: High pressure (typically clear, stable weather)
+
+Changes in pressure can help forecast weather - falling pressure often indicates approaching storms, while rising pressure suggests improving conditions.
+
 </Details>
 
 ## Hourly Pressure Patterns
@@ -79,8 +95,9 @@ from ${main_data}
 SELECT
   extract('hour' from timestamp) as hour_of_day,
   round(avg(pressure), 1) as avg_pressure
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
 GROUP BY hour_of_day
 ORDER BY hour_of_day
@@ -113,18 +130,15 @@ ORDER BY hour_of_day
 </LineChart>
 
 <Details title='About Pressure Patterns'>
-    
-    This chart shows the average pressure readings for each hour of the day, calculated from all data within your selected date range.
-    
-    - It shows hours 0-23 to reveal any daily pressure cycle patterns
-    - Values are averaged across all days in your selected period  
-    - Use the zoom control at the bottom to focus on specific hours
-    - Pressure often follows a semi-diurnal pattern with:
-      - Two daily maximums (around 10 AM and 10 PM)
-      - Two daily minimums (around 4 AM and 4 PM)
-      - This is known as the atmospheric tide
-    
-    The reference line at 1013.25 hPa shows standard sea level pressure.
+
+This chart shows the average pressure readings for each hour of the day, calculated from all data within your selected date range.
+
+- It shows hours 0-23 to reveal any daily pressure cycle patterns
+- Values are averaged across all days in your selected period
+- Use the zoom control at the bottom to focus on specific hours
+- Pressure often follows a semi-diurnal pattern with two daily maximums (around 10 AM and 10 PM) and two daily minimums (around 4 AM and 4 PM), known as the atmospheric tide
+
+The reference line at 1013.25 hPa shows standard sea level pressure.
 
 </Details>
 
@@ -133,11 +147,11 @@ ORDER BY hour_of_day
 ```sql time_series_data
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
-  SELECT 
+  SELECT
     timestamp,
     -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE 
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30 
+    CASE
+      WHEN EXTRACT(MINUTE FROM timestamp) < 30
       THEN date_trunc('hour', timestamp)
       ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
     END AS half_hour_timestamp,
@@ -193,15 +207,15 @@ where pressure = (select max(pressure) from ${main_data})
 </LineChart>
 
 <Details title='About This Chart'>
-    
-    This chart shows atmospheric pressure averaged in 30-minute intervals, providing a smoother view of pressure trends over time.
-    
-    - Each point represents the average of all readings within a 30-minute period
-    - The reference line shows standard sea level pressure (1013.25 hPa)
-    - Rising pressure generally indicates improving weather
-    - Falling pressure often signals deteriorating weather conditions
-    
-    Use the zoom control at the bottom to focus on specific time periods of interest.
+
+This chart shows atmospheric pressure averaged in 30-minute intervals, providing a smoother view of pressure trends over time.
+
+- Each point represents the average of all readings within a 30-minute period
+- The reference line shows standard sea level pressure (1013.25 hPa)
+- Rising pressure generally indicates improving weather
+- Falling pressure often signals deteriorating weather conditions
+
+Use the zoom control at the bottom to focus on specific time periods of interest.
 
 </Details>
 
@@ -212,9 +226,9 @@ where pressure = (select max(pressure) from ${main_data})
 SELECT
   date_trunc('day', timestamp)::date as day,
   round(avg(pressure), 1) as avg_pressure
-FROM station_01
-WHERE 
-  timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
   AND pressure IS NOT NULL
 GROUP BY day
 ORDER BY day
@@ -222,16 +236,16 @@ ORDER BY day
 
 ### Daily Atmospheric Pressure
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_pressure_for_calendar}
   date=day
   value=avg_pressure
   title="Daily Atmospheric Pressure"
   subtitle="Calendar view showing daily average atmospheric pressure (hPa)"
   colorScale={[
-    ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],  // Low pressure: Dark blue to light blue
-    ["rgb(173, 255, 47)", "rgb(144, 238, 144)"],  // Normal pressure: Light green-yellow to light green
-    ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]  // High pressure: Orange to red
+    ["rgb(0, 0, 255)", "rgb(173, 216, 230)"],
+    ["rgb(173, 255, 47)", "rgb(144, 238, 144)"],
+    ["rgb(255, 165, 0)", "rgb(255, 0, 0)"]
   ]}
   min=990
   max=1040
@@ -239,16 +253,18 @@ ORDER BY day
 />
 
 <Details title='About Pressure Calendar Heatmap'>
-  This calendar visualization shows daily average atmospheric pressure in hectopascals (hPa):
-  
-  - **Color Scale**:
-    - Blue: Low pressure (typically associated with unsettled weather, clouds, precipitation)
-    - Green: Normal pressure (around the standard atmospheric pressure of 1013.25 hPa)
-    - Orange/Red: High pressure (typically associated with clear, settled weather)
-  
-  Standard atmospheric pressure at sea level is 1013.25 hPa. Variations in atmospheric pressure are important for weather forecasting:
-  - Rising pressure often indicates improving weather
-  - Falling pressure often indicates deteriorating weather
-  
-  Hover over each day to see the exact values. This visualization helps identify patterns in atmospheric pressure over time.
+
+This calendar visualization shows daily average atmospheric pressure in hectopascals (hPa):
+
+**Color Scale:**
+- Blue: Low pressure (typically associated with unsettled weather, clouds, precipitation)
+- Green: Normal pressure (around the standard atmospheric pressure of 1013.25 hPa)
+- Orange/Red: High pressure (typically associated with clear, settled weather)
+
+Standard atmospheric pressure at sea level is 1013.25 hPa. Variations in atmospheric pressure are important for weather forecasting:
+- Rising pressure often indicates improving weather
+- Falling pressure often indicates deteriorating weather
+
+Hover over each day to see the exact values. This visualization helps identify patterns in atmospheric pressure over time.
+
 </Details>

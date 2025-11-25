@@ -21,7 +21,7 @@ hide_title: false
 ## Quick Station Access
 
 <div class="border rounded-lg p-5 my-3 mx-1 hover:shadow-lg transition bg-blue-50 dark:bg-blue-900/30">
-    <a href="/Stations/station=01/near-real-time" class="flex items-center justify-between">
+    <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/near-real-time" class="flex items-center justify-between">
         <div>
             <h3 class="text-xl font-bold mb-2">Near Real-Time Dashboard</h3>
             <p class="text-sm">View the latest 5-minute weather readings</p>
@@ -36,7 +36,7 @@ hide_title: false
 
 <Grid cols=2>
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-green-50 dark:bg-green-900/30">
-        <a href="/Stations/station=01/temperature-and-humidity" class="flex items-center justify-between">
+        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/temperature-and-humidity" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Temperature and Humidity</h3>
                 <p class="text-xs mt-1">Temperature trends and humidity analysis</p>
@@ -48,7 +48,7 @@ hide_title: false
     </div>
     
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-amber-50 dark:bg-amber-900/30">
-        <a href="/Stations/station=01/gas-sensors" class="flex items-center justify-between">
+        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/gas-sensors" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Gas Sensors</h3>
                 <p class="text-xs mt-1">Oxidised, reducing, and NH3 measurements</p>
@@ -60,7 +60,7 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-yellow-50 dark:bg-yellow-900/30">
-        <a href="/Stations/station=01/light-and-proximity" class="flex items-center justify-between">
+        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/light-and-proximity" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Light and Proximity</h3>
                 <p class="text-xs mt-1">Ambient light levels and proximity detection</p>
@@ -72,7 +72,7 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-purple-50 dark:bg-purple-900/30">
-        <a href="/Stations/station=01/pressure" class="flex items-center justify-between">
+        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/pressure" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Atmospheric Pressure</h3>
                 <p class="text-xs mt-1">Barometric pressure trends and analysis</p>
@@ -84,13 +84,13 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-red-50 dark:bg-red-900/30">
-        <a href="/Stations/station=01/particulate-matter" class="flex items-center justify-between">
+        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/particulate-matter" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Particulate Matter</h3>
                 <p class="text-xs mt-1">PM1.0, PM2.5, and PM10 air quality analysis</p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" fill="currentColor" viewBox="0 0 512 512">
-              <path d="M 480 288 L 480 320 L 480 288 L 480 320 L 288 320 L 288 320 L 288 480 L 288 480 L 320 480 L 320 480 L 320 352 L 320 352 L 480 352 L 480 352 L 480 480 L 480 480 L 512 480 L 512 480 L 512 288 L 512 288 L 480 288 L 480 288 Z M 192 32 L 192 0 L 192 32 L 192 0 L 0 0 L 0 0 L 0 192 L 0 192 L 32 192 L 32 192 L 32 32 L 32 32 L 192 32 L 192 32 Z M 32 480 L 32 512 L 32 480 L 32 512 L 224 512 L 224 512 L 224 320 L 224 320 L 192 320 L 192 320 L 192 480 L 192 480 L 32 480 L 32 480 Z M 320 32 L 320 0 L 320 32 L 320 0 L 512 0 L 512 0 L 512 192 L 512 192 L 480 192 L 480 192 L 480 32 L 480 32 L 320 32 L 320 32 Z M 256 128 Q 230 129 211 147 Q 193 166 192 192 Q 193 218 211 237 Q 230 255 256 256 Q 282 255 301 237 Q 319 218 320 192 Q 319 166 301 147 Q 282 129 256 128 L 256 128 Z M 256 224 Q 239 223 227 211 Q 215 199 216 192 Q 215 175 227 163 Q 239 151 256 152 Q 273 151 285 163 Q 297 175 296 192 Q 297 199 285 211 Q 273 223 256 224 L 256 224 Z M 128 256 Q 102 257 83 275 Q 65 294 64 320 Q 65 346 83 365 Q 102 383 128 384 Q 154 383 173 365 Q 191 346 192 320 Q 191 294 173 275 Q 154 257 128 256 L 128 256 Z M 128 352 Q 111 351 99 339 Q 87 327 88 320 Q 87 303 99 291 Q 111 279 128 280 Q 145 279 157 291 Q 169 303 168 320 Q 169 327 157 339 Q 145 351 128 352 L 128 352 Z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" height="1.5em" fill="currentColor" viewBox="0 0 640 512">
+              <path d="M0 336c0 79.5 64.5 144 144 144l368 0c70.7 0 128-57.3 128-128c0-61.9-44-113.6-102.4-125.4c4.1-10.7 6.4-22.4 6.4-34.6c0-53-43-96-96-96c-19.7 0-38.1 6-53.3 16.2C367 64.2 315.3 32 256 32C167.6 32 96 103.6 96 192c0 2.7 .1 5.4 .2 8.1C40.2 219.8 0 273.2 0 336z"/>
             </svg>
         </a>
     </div>
@@ -121,16 +121,16 @@ Instead of managing databases and message brokers, sensors write directly to clo
 
 This reference implementation uses environmental sensors, but the pattern works for any IoT data source. Explore the data structure using DuckDB:
 ```sql
-SUMMARIZE 
-    SELECT 
-        * 
-    FROM 
-        read_parquet('s3://us-west-2.opendata.source.coop/youssef-harby/weather-station-realtime-parquet/1m_avg_daily/station=01/**/*.parquet', union_by_name=true, hive_partitioning=true);
+SUMMARIZE
+    SELECT
+        *
+    FROM
+        read_parquet('s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/**/*.parquet', union_by_name=true, hive_partitioning=true);
 ```
 
 ```sql latest_data_schema
 -- Get comprehensive statistics for all sensor data fields
-SUMMARIZE SELECT * FROM station_01
+SUMMARIZE SELECT * FROM all_stations
 ```
 
 <DataTable
@@ -187,7 +187,7 @@ This reference deployment uses the Enviro+ sensor pack to demonstrate the platfo
 - Particulate Matter (PM1.0, PM2.5, and PM10)
 
 <Alert status="info">
-  <strong>Update (April 4, 2025):</strong> Particulate Matter sensor data is now available! Starting from <a href="https://source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=2025/month=04/day=04/data_0240.parquet">station=01/year=2025/month=04/day=04/data_0240.parquet</a>, all files include PM1.0, PM2.5, and PM10 measurements from the PMS5003 sensor, along with particle count data for different sizes.
+  <strong>Update (April 4, 2025):</strong> Particulate Matter sensor data is now available! All files from <a href="https://source.coop/walkthru-earth/opensensor-space/">opensensor-space</a> include PM1.0, PM2.5, and PM10 measurements from the PMS5003 sensor, along with particle count data for different sizes.
 </Alert>
 
 You can find more information about the Enviro+ here:
@@ -241,7 +241,7 @@ This dashboard is built with [Evidence](https://evidence.dev), which allows us t
 ## Resources
 
 - [Project Repository](https://github.com/walkthru-earth/opensensor-space-edge)
-- [Data Repository](https://source.coop/youssef-harby/weather-station-realtime-parquet/)
+- [Data Repository](https://source.coop/walkthru-earth/opensensor-space/)
 
 ### Research & Further Reading
 

@@ -147,16 +147,14 @@ These files contain 1-second interval readings aggregated into 5-minute chunks f
 station={STATION_ID}/year={year}/month={month}/day={day}/data_{time}.parquet
 ```
 
-Example: 
+Example:
 ```sql
-s3://us-west-2.opendata.source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=2025/month=04/day=05/data_0145.parquet
+s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/year=2025/month=04/day=05/data_0145.parquet
 ```
 
-View example files:
-- [Near real-time 5-minute file (data_0145.parquet)](https://source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=2025/month=04/day=05/data_0145.parquet)
-- [Near real-time 5-minute file (data_1800.parquet)](https://source.coop/youssef-harby/weather-station-realtime-parquet/parquet/station=01/year=2025/month=04/day=05/data_1800.parquet)
+View example files at [Source Cooperative - opensensor-space](https://source.coop/walkthru-earth/opensensor-space/)
 
-This structure is used in the [Near Real-Time Dashboard](/Stations/station=01/near-real-time) to show the most recent readings.
+This structure is used in the [Near Real-Time Dashboard](/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/near-real-time) to show the most recent readings.
 
 #### Daily Aggregated Data (for historical analysis)
 
@@ -168,12 +166,10 @@ station={STATION_ID}/year={year}/month={month}/{year}_{month}_{day}.parquet
 
 Example:
 ```sql
-s3://us-west-2.opendata.source.coop/youssef-harby/weather-station-realtime-parquet/1m_avg_daily/station=01/year=2025/month=04/2025_04_05.parquet
+s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/year=2025/month=04/day=05/data_0.parquet
 ```
 
-View example files:
-- [Daily aggregated file (2025_04_05.parquet)](https://source.coop/youssef-harby/weather-station-realtime-parquet/1m_avg_daily/station=01/year=2025/month=04/2025_04_05.parquet)
-- [Daily aggregated file (2025_04_04.parquet)](https://source.coop/youssef-harby/weather-station-realtime-parquet/1m_avg_daily/station=01/year=2025/month=04/2025_04_04.parquet)
+The new architecture stores daily consolidated data directly in the same partition structure.
 
 This structure is used for all the historical dashboards and trend analysis.
 

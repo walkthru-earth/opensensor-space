@@ -1,17 +1,31 @@
 ---
 title: Light and Proximity
 ---
+
+```sql station_info
+SELECT * FROM station_registry WHERE station_id = '${params.station}'
+```
+
+# {station_info[0].station_name} - Light & Proximity
+
 <LastRefreshed/>
 
 <Details title='About this dashboard'>
-  This dashboard analyzes light (Lux) and proximity sensor readings from My DIY weather station. You can select a date range to view specific data.
+
+This dashboard analyzes light (Lux) and proximity sensor readings from **{station_info[0].station_name}**. You can select a date range to view specific data.
+
+- **Location**: {station_info[0].latitude}, {station_info[0].longitude}
+- **Sensor Type**: {station_info[0].sensor_type}
+- **Environment**: {station_info[0].station_type}
+
 </Details>
 
 ```sql date_range_data
-select 
+select
   (min(timestamp)) as min_date,
   (max(timestamp)) as max_date
-from station_01
+from all_stations
+where station_id = '${params.station}'
 ```
 
 <DateRange
@@ -32,8 +46,9 @@ select
   timestamp,
   lux,
   proximity
-from station_01
-where timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+from all_stations
+where station_id = '${params.station}'
+  and timestamp::date between '${inputs.date_filter.start}' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
 ```
 
 ```sql summary_stats
@@ -63,32 +78,34 @@ from ${main_data}
 ```
 
 <Grid numCols={2}>
-  <BigValue 
-    data={summary_stats} 
+  <BigValue
+    data={summary_stats}
     value=lux_range
-    title="Light Range" 
+    title="Light Range"
     subtitle=lux_avg
     backgroundColor=lux_bg_color
   />
-  <BigValue 
-    data={summary_stats} 
+  <BigValue
+    data={summary_stats}
     value=proximity_range
-    title="Proximity Range" 
+    title="Proximity Range"
     subtitle=proximity_avg
     backgroundColor=proximity_bg_color
   />
 </Grid>
 
 <Details title="Understanding Light and Proximity Readings">
-  - **Lux**: Measures the intensity of light as perceived by the human eye. One lux equals one lumen per square meter.
-  - **Proximity**: Raw proximity sensor value - lower values generally indicate objects are closer to the sensor.
-  
-  ### Light Levels Reference
-  - &lt;10 lux: Very dark (moonlight)
-  - 10-50 lux: Dark indoor lighting
-  - 100-500 lux: Normal indoor lighting
-  - 1,000+ lux: Daylight
-  - 10,000+ lux: Direct sunlight
+
+- **Lux**: Measures the intensity of light as perceived by the human eye. One lux equals one lumen per square meter.
+- **Proximity**: Raw proximity sensor value - lower values generally indicate objects are closer to the sensor.
+
+### Light Levels Reference
+- Below 10 lux: Very dark (moonlight)
+- 10-50 lux: Dark indoor lighting
+- 100-500 lux: Normal indoor lighting
+- 1,000+ lux: Daylight
+- 10,000+ lux: Direct sunlight
+
 </Details>
 
 ## Hourly Patterns
@@ -99,8 +116,9 @@ SELECT
   extract('hour' from timestamp) as hour_of_day,
   round(avg(lux), 1) as avg_lux,
   round(avg(proximity), 1) as avg_proximity
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date
   AND timestamp::date <= '${inputs.date_filter.end}'::date
 GROUP BY hour_of_day
 ORDER BY hour_of_day
@@ -150,19 +168,15 @@ ORDER BY hour_of_day, sensor_type
 </LineChart>
 
 <Details title='About Hourly Patterns'>
-    
-    This chart shows the average sensor readings for each hour of the day, calculated from all data within your selected date range. 
-    
-    - It always shows hours 0-23 to reveal the daily light cycle pattern
-    - Values are averaged across all days in your selected period  
-    - Use the zoom control at the bottom to focus on specific hours
-    - The natural light pattern typically shows:
-      - Lowest values during night hours (0-5, 20-23)
-      - Rising values during morning (6-11)
-      - Peak values during midday (11-15)
-      - Declining values in evening (16-19)
-    
-    Proximity sensor values may show different patterns based on its placement and what it's detecting.
+
+This chart shows the average sensor readings for each hour of the day, calculated from all data within your selected date range.
+
+- It always shows hours 0-23 to reveal the daily light cycle pattern
+- Values are averaged across all days in your selected period
+- Use the zoom control at the bottom to focus on specific hours
+- The natural light pattern typically shows lowest values during night hours (0-5, 20-23), rising values during morning (6-11), peak values during midday (11-15), and declining values in evening (16-19)
+
+Proximity sensor values may show different patterns based on its placement and what it's detecting.
 
 </Details>
 
@@ -171,11 +185,11 @@ ORDER BY hour_of_day, sensor_type
 ```sql time_series_data
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
-  SELECT 
+  SELECT
     timestamp,
     -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE 
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30 
+    CASE
+      WHEN EXTRACT(MINUTE FROM timestamp) < 30
       THEN date_trunc('hour', timestamp)
       ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
     END AS half_hour_timestamp,
@@ -241,14 +255,14 @@ where lux = (select max(lux) from ${main_data})
 </LineChart>
 
 <Details title='About This Chart'>
-    
-    This chart shows light and proximity readings averaged in 30-minute intervals, providing a smoother view of trends over time.
-    
-    - Each point represents the average of all readings within a 30-minute period
-    - Light levels (lux) show natural daily cycles with sunrise and sunset
-    - Proximity values indicate object detection near the sensor
-    
-    Use the zoom control at the bottom to focus on specific time periods of interest.
+
+This chart shows light and proximity readings averaged in 30-minute intervals, providing a smoother view of trends over time.
+
+- Each point represents the average of all readings within a 30-minute period
+- Light levels (lux) show natural daily cycles with sunrise and sunset
+- Proximity values indicate object detection near the sensor
+
+Use the zoom control at the bottom to focus on specific time periods of interest.
 
 </Details>
 
@@ -260,40 +274,41 @@ SELECT
   date_trunc('day', timestamp)::date as day,
   round(avg(lux), 1) as avg_lux,
   round(avg(proximity), 1) as avg_proximity
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date
   AND timestamp::date <= '${inputs.date_filter.end}'::date
   AND (lux IS NOT NULL OR proximity IS NOT NULL)
 GROUP BY day
 ORDER BY day
 ```
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_values_for_calendar}
   date=day
   value=avg_lux
   title="Daily Light Levels"
   subtitle="Calendar view showing daily average light levels in lux"
   colorScale={[
-    ["rgb(50, 50, 50)", "rgb(100, 100, 100)"],  // Very dark: Dark gray to light gray (below 50 lux)
-    ["rgb(255, 204, 0)", "rgb(255, 255, 0)"],   // Medium: Dark yellow to bright yellow (50-500 lux)
-    ["rgb(255, 165, 0)", "rgb(255, 140, 0)"]    // Bright: Orange to dark orange (above 500 lux)
+    ["rgb(50, 50, 50)", "rgb(100, 100, 100)"],
+    ["rgb(255, 204, 0)", "rgb(255, 255, 0)"],
+    ["rgb(255, 165, 0)", "rgb(255, 140, 0)"]
   ]}
   min=0
   max=1000
   valueFmt="0.0"
 />
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_values_for_calendar}
   date=day
   value=avg_proximity
   title="Daily Proximity Readings"
   subtitle="Calendar view showing daily average proximity values"
   colorScale={[
-    ["rgb(0, 128, 128)", "rgb(64, 224, 208)"],  // Close objects: Teal to turquoise (low values)
-    ["rgb(70, 130, 180)", "rgb(100, 149, 237)"], // Medium distance: Steel blue to cornflower blue
-    ["rgb(106, 90, 205)", "rgb(138, 43, 226)"]  // Far objects: Slate blue to blue violet (high values)
+    ["rgb(0, 128, 128)", "rgb(64, 224, 208)"],
+    ["rgb(70, 130, 180)", "rgb(100, 149, 237)"],
+    ["rgb(106, 90, 205)", "rgb(138, 43, 226)"]
   ]}
   min=0
   max=100
@@ -301,17 +316,19 @@ ORDER BY day
 />
 
 <Details title='About Calendar Views'>
-  These calendar visualizations show daily average light and proximity levels:
-  
-  - **Light Levels**: 
-    - Gray: Very dark (below 50 lux)
-    - Yellow: Normal indoor lighting (50-500 lux)
-    - Orange: Bright light (above 500 lux)
-  
-  - **Proximity**: 
-    - Teal/Turquoise: Objects close to the sensor (low values)
-    - Blue: Medium distance
-    - Purple: No objects detected near the sensor (high values)
-  
-  Hover over each day to see the exact values. These visualizations help identify patterns in light and proximity readings over time.
+
+These calendar visualizations show daily average light and proximity levels:
+
+**Light Levels:**
+- Gray: Very dark (below 50 lux)
+- Yellow: Normal indoor lighting (50-500 lux)
+- Orange: Bright light (above 500 lux)
+
+**Proximity:**
+- Teal/Turquoise: Objects close to the sensor (low values)
+- Blue: Medium distance
+- Purple: No objects detected near the sensor (high values)
+
+Hover over each day to see the exact values. These visualizations help identify patterns in light and proximity readings over time.
+
 </Details>

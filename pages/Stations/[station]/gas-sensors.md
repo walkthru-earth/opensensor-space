@@ -2,26 +2,36 @@
 title: Gas Sensor Readings
 ---
 
+```sql station_info
+SELECT * FROM station_registry WHERE station_id = '${params.station}'
+```
+
+# {station_info[0].station_name} - Gas Sensors
+
 <LastRefreshed/>
 
 <Details title='About this dashboard'>
-    
-    This dashboard analyzes gas sensor readings (Oxidised, Reducing, NH3) from My DIY weather station. Units are typically kΩ (kiloohms), representing sensor resistance. 
-    
-    **Important Interpretation Guidelines**:
-    - Lower resistance values often indicate higher gas concentrations
-    - Each gas sensor has different sensitivity characteristics
-    - Sudden changes in readings may indicate environmental events
-    
-    The dashboard includes time series analysis, daily patterns, and calendar views for long-term trend identification.
+
+This dashboard analyzes gas sensor readings (Oxidised, Reducing, NH3) from **{station_info[0].station_name}**. Units are typically kΩ (kiloohms), representing sensor resistance.
+
+**Important Interpretation Guidelines:**
+- Lower resistance values often indicate higher gas concentrations
+- Each gas sensor has different sensitivity characteristics
+- Sudden changes in readings may indicate environmental events
+
+**Station Info:**
+- **Location**: {station_info[0].latitude}, {station_info[0].longitude}
+- **Sensor Type**: {station_info[0].sensor_type}
+- **Environment**: {station_info[0].station_type}
 
 </Details>
 
 ```sql date_range_data
-select 
+select
   (min(timestamp)) as min_date,
   (max(timestamp)) as max_date
-from station_01
+from all_stations
+where station_id = '${params.station}'
 ```
 
 <DateRange
@@ -43,8 +53,9 @@ select
   oxidised,
   reducing,
   nh3
-from station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+from all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 ```
 
@@ -84,24 +95,24 @@ from ${main_data}
 ```
 
 <Grid numCols={3}>
-  <BigValue 
-    data={summary_stats} 
+  <BigValue
+    data={summary_stats}
     value=oxidised_range
-    title="Oxidised Gas Range" 
+    title="Oxidised Gas Range"
     subtitle=oxidised_avg
     backgroundColor=oxidised_bg_color
   />
-  <BigValue 
-    data={summary_stats} 
+  <BigValue
+    data={summary_stats}
     value=reducing_range
-    title="Reducing Gas Range" 
+    title="Reducing Gas Range"
     subtitle=reducing_avg
     backgroundColor=reducing_bg_color
   />
-  <BigValue 
-    data={summary_stats} 
+  <BigValue
+    data={summary_stats}
     value=nh3_range
-    title="NH3 Range" 
+    title="NH3 Range"
     subtitle=nh3_avg
     backgroundColor=nh3_bg_color
   />
@@ -114,8 +125,9 @@ SELECT
   round(avg(oxidised), 1) as oxidised,
   round(avg(reducing), 1) as reducing,
   round(avg(nh3), 1) as nh3
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
 GROUP BY hour_of_day
 ORDER BY hour_of_day
@@ -173,18 +185,15 @@ ORDER BY hour_of_day, gas_type
 </LineChart>
 
 <Details title='About Hourly Gas Patterns'>
-    
-    This chart shows the average gas sensor readings for each hour of the day, calculated from all data within your selected date range. 
-    
-    - It always shows hours 0-23 to reveal the daily cycle pattern
-    - Values are averaged across all days in your selected period  
-    - Use the zoom control at the bottom to focus on specific hours
-    - Daily patterns may correlate with:
-      - Human activities (cooking, cleaning)
-      - HVAC operation cycles
-      - Outdoor air pollution patterns
-    
-    Lower resistance values (kΩ) generally indicate higher gas concentrations.
+
+This chart shows the average gas sensor readings for each hour of the day, calculated from all data within your selected date range.
+
+- It always shows hours 0-23 to reveal the daily cycle pattern
+- Values are averaged across all days in your selected period
+- Use the zoom control at the bottom to focus on specific hours
+- Daily patterns may correlate with human activities (cooking, cleaning), HVAC operation cycles, and outdoor air pollution patterns
+
+Lower resistance values (kΩ) generally indicate higher gas concentrations.
 
 </Details>
 
@@ -193,11 +202,11 @@ ORDER BY hour_of_day, gas_type
 ```sql time_series_data
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
-  SELECT 
+  SELECT
     timestamp,
     -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE 
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30 
+    CASE
+      WHEN EXTRACT(MINUTE FROM timestamp) < 30
       THEN date_trunc('hour', timestamp)
       ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
     END AS half_hour_timestamp,
@@ -262,17 +271,14 @@ ORDER BY half_hour_timestamp, gas_type
 </LineChart>
 
 <Details title='About This Chart'>
-    
-    This chart shows gas sensor readings averaged in 30-minute intervals, providing a smoother view of gas level trends over time.
-    
-    - Each point represents the average of all readings within a 30-minute period
-    - Lower resistance values (kΩ) indicate higher gas concentrations
-    - Reference lines show thresholds where gas levels may be of concern:
-      - Oxidised gases (NO2/O3): Below 10 kΩ indicates elevated levels
-      - Reducing gases (CO/VOCs): Below 750 kΩ indicates elevated levels
-      - NH3 (ammonia): Below 25 kΩ indicates elevated levels
-    
-    Use the zoom control at the bottom to focus on specific time periods of interest.
+
+This chart shows gas sensor readings averaged in 30-minute intervals, providing a smoother view of gas level trends over time.
+
+- Each point represents the average of all readings within a 30-minute period
+- Lower resistance values (kΩ) indicate higher gas concentrations
+- Reference lines show thresholds where gas levels may be of concern (Oxidised gases below 10 kΩ, Reducing gases below 750 kΩ, NH3 below 25 kΩ)
+
+Use the zoom control at the bottom to focus on specific time periods of interest.
 
 </Details>
 
@@ -280,7 +286,7 @@ ORDER BY half_hour_timestamp, gas_type
 
 ```sql gas_correlation
 -- Get data for the gas correlation scatter plots
-SELECT 
+SELECT
   date_trunc('hour', timestamp) as hour,
   extract('hour' from timestamp) as hour_of_day,
   round(avg(oxidised), 1) as oxidised,
@@ -293,11 +299,12 @@ SELECT
     WHEN extract('hour' from timestamp) >= 18 AND extract('hour' from timestamp) < 22 THEN 'Evening (18-22)'
     ELSE 'Night (22-6)'
   END as time_of_day
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
-GROUP BY 
+GROUP BY
   date_trunc('hour', timestamp),
   extract('hour' from timestamp)
 ORDER BY hour
@@ -319,7 +326,7 @@ ORDER BY hour
     xFmt="0.0"
     yFmt="0.0"
   />
-  
+
   <ScatterPlot
     data={gas_correlation}
     x=nh3
@@ -338,19 +345,16 @@ ORDER BY hour
 </Grid>
 
 <Details title='Understanding Gas Correlation Patterns'>
-    
-    These scatter plots reveal correlations between different gas sensor readings:
-    
-    - **Color Coding**: Points are colored by time of day to help identify patterns
-    - **Interpretation**:
-      - Points clustering along a diagonal line suggest gases that rise and fall together
-      - Scattered points with no pattern suggest gases that behave independently
-      - Clusters at different times of day may indicate activities that produce specific gas combinations
-    
-    Common patterns:
-    - Cooking activities: May show correlated rises in reducing gases and NH3
-    - Traffic pollution: May show rises in oxidised gases (NO2) with some CO (reducing)
-    - Cleaning products: Can cause spikes in various VOCs (reducing) and sometimes NH3
+
+These scatter plots reveal correlations between different gas sensor readings:
+
+- **Color Coding**: Points are colored by time of day to help identify patterns
+- **Interpretation**: Points clustering along a diagonal line suggest gases that rise and fall together. Scattered points with no pattern suggest gases that behave independently. Clusters at different times of day may indicate activities that produce specific gas combinations.
+
+Common patterns:
+- Cooking activities: May show correlated rises in reducing gases and NH3
+- Traffic pollution: May show rises in oxidised gases (NO2) with some CO (reducing)
+- Cleaning products: Can cause spikes in various VOCs (reducing) and sometimes NH3
 
 </Details>
 
@@ -363,75 +367,76 @@ SELECT
   round(avg(oxidised), 1) as avg_oxidised,
   round(avg(reducing), 1) as avg_reducing,
   round(avg(nh3), 1) as avg_nh3
-FROM station_01
-WHERE timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
   AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
 GROUP BY day
 ORDER BY day
 ```
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_gas_for_calendar}
   date=day
   value=avg_oxidised
   title="Daily Oxidised Gas Levels"
   subtitle="Daily average oxidised gas readings"
   colorScale={[
-    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]
   ]}
   valueFmt="0.0"
   invertColorScale=true
 />
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_gas_for_calendar}
   date=day
   value=avg_reducing
   title="Daily Reducing Gas Levels"
   subtitle="Daily average reducing gas readings"
   colorScale={[
-    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]
   ]}
   valueFmt="0.0"
   invertColorScale=true
 />
 
-<CalendarHeatmap 
+<CalendarHeatmap
   data={daily_gas_for_calendar}
   date=day
   value=avg_nh3
   title="Daily NH3 Levels"
   subtitle="Daily average NH3 readings"
   colorScale={[
-    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],  // High concentration (low resistance): Red to orange
-    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],  // Medium concentration: Yellow to green-yellow
-    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]  // Low concentration (high resistance): Dark green to light green
+    ["rgb(255, 0, 0)", "rgb(255, 165, 0)"],
+    ["rgb(255, 255, 0)", "rgb(173, 255, 47)"],
+    ["rgb(0, 128, 0)", "rgb(144, 238, 144)"]
   ]}
   valueFmt="0.0"
   invertColorScale=true
 />
 
 <Details title='About Gas Sensor Calendar Heatmaps'>
-    
-    These calendar visualizations show daily average gas sensor readings in kiloohms (kΩ). For gas sensors, lower resistance values typically indicate higher gas concentrations:
-    
-    - **Color Scale** (for all gas sensors):
-      - Red/Orange: Higher gas concentration (lower sensor resistance)
-      - Yellow: Moderate gas concentration
-      - Green: Lower gas concentration (higher sensor resistance)
-    
-    *Note*: The color scale is inverted because sensor resistance (kΩ) is inversely related to gas concentration.
-    
-    Typical interpretation thresholds:
-    - **Oxidised gases**: Readings below 10 kΩ may indicate elevated NO2 or O3
-    - **Reducing gases**: Readings below 750 kΩ may indicate elevated CO or VOCs
-    - **NH3**: Readings below 25 kΩ may indicate elevated ammonia levels
-    
-    Hover over each day to see the exact values. These visualizations help identify patterns in gas levels over time.
+
+These calendar visualizations show daily average gas sensor readings in kiloohms (kΩ). For gas sensors, lower resistance values typically indicate higher gas concentrations:
+
+**Color Scale** (for all gas sensors):
+- Red/Orange: Higher gas concentration (lower sensor resistance)
+- Yellow: Moderate gas concentration
+- Green: Lower gas concentration (higher sensor resistance)
+
+*Note*: The color scale is inverted because sensor resistance (kΩ) is inversely related to gas concentration.
+
+Typical interpretation thresholds:
+- **Oxidised gases**: Readings below 10 kΩ may indicate elevated NO2 or O3
+- **Reducing gases**: Readings below 750 kΩ may indicate elevated CO or VOCs
+- **NH3**: Readings below 25 kΩ may indicate elevated ammonia levels
+
+Hover over each day to see the exact values. These visualizations help identify patterns in gas levels over time.
 
 </Details>
