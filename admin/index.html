@@ -9,21 +9,11 @@
     body {
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
-      background: #0f172a;
     }
-    /* Override Sveltia CMS login page title */
-    h1 {
-      visibility: hidden;
-      position: relative;
-      height: 1.5em;
-    }
-    h1::after {
-      content: "Join OpenSensor.Space";
-      visibility: visible;
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
+    /* Hide Decap logo */
+    [class*="AppMainContainer"] > a[href*="decap"],
+    a[href="https://decapcms.org"] {
+      display: none !important;
     }
   </style>
 </head>
