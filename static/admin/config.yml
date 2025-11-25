@@ -5,12 +5,10 @@ backend:
   name: github
   repo: walkthru-earth/opensensor-space
   branch: contributions
-  # Use Sveltia's free OAuth service (no setup required)
-  # Uncomment below if you set up your own OAuth app
-  # base_url: https://your-site.com
-
-# Optionally use Sveltia's hosted OAuth (easiest setup)
-# auth_endpoint: https://sveltia-cms-auth.cloudflare.dev
+  # Netlify OAuth - using Netlify site for GitHub authentication
+  # Configure GitHub OAuth app in Netlify: Site settings → Access control → OAuth
+  base_url: https://opensensor-cms.netlify.app
+  auth_endpoint: api/v1/oauth/authorize
 
 site_url: https://opensensor.space
 display_url: https://opensensor.space
