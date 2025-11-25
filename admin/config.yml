@@ -6,6 +6,10 @@ backend:
   repo: walkthru-earth/opensensor-space
   branch: contributions-clean
 
+# Branding
+logo_url: https://opensensor.space/logo/weather_parquet.svg
+locale: en
+
 # Point back to the main Evidence site
 site_url: https://opensensor.space
 display_url: https://opensensor.space
