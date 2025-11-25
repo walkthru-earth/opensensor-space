@@ -1,0 +1,9 @@
+# No build needed - just serve static files
+[build]
+  publish = "."
+  command = "echo 'No build needed'"
+
+[[redirects]]
+  from = "/"
+  to = "/admin/"
+  status = 302
