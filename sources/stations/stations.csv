@@ -1,2 +1,3 @@
 station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status
+f0929027-aceb-41ee-8332-b32ede28ea0a,testing station,agricultural,30.020652,31.47316,Outdoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=f0929027-aceb-41ee-8332-b32ede28ea0a/,description text here,yharby,https://youssefharby.com,2025-11-25,pending
 0195ae3c-43e0-7624-8c5c-7424adbcc30d,Enviro+,enviroplus,30.0626,31.4916,Indoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/,Reference environmental monitoring station,OpenSensor Team,https://opensensor.space,2025-04-01,approved
