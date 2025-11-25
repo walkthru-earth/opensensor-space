@@ -10,14 +10,38 @@
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
     }
-    /* Hide Decap logo */
+    /* Hide Decap logo and replace with walkthru.earth attribution */
     [class*="AppMainContainer"] > a[href*="decap"],
     a[href="https://decapcms.org"] {
       display: none !important;
+    }
+    /* Custom footer attribution */
+    .walkthru-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 8px;
+      font-size: 12px;
+      color: #666;
+      background: rgba(255,255,255,0.95);
+      border-top: 1px solid #eee;
+      z-index: 1000;
+    }
+    .walkthru-footer a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    .walkthru-footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <script src="https://unpkg.com/decap-cms@^3.9.0/dist/decap-cms.js"></script>
+  <div class="walkthru-footer">
+    A <a href="https://walkthru.earth" target="_blank">walkthru.earth</a> initiative
+  </div>
 </body>
 </html>
