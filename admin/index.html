@@ -4,12 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
-  <title>OpenSensor - Station Registration</title>
+  <title>Join OpenSensor.Space</title>
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
       background: #0f172a;
+    }
+    /* Override Sveltia CMS header title */
+    .sui.text-xl.font-bold {
+      visibility: hidden;
+      position: relative;
+    }
+    .sui.text-xl.font-bold::after {
+      content: "Join OpenSensor.Space";
+      visibility: visible;
+      position: absolute;
+      left: 0;
     }
   </style>
 </head>
