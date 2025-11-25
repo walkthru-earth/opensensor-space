@@ -1,10 +1,11 @@
-# OpenSensor Station Registration - Sveltia CMS Configuration
-# Hosted on Netlify for OAuth - https://opensensor-cms.netlify.app
+# OpenSensor Station Registration - Decap CMS Configuration
+# OAuth via Cloudflare Workers - https://opensensor-auth.walkthru-earth.workers.dev
 
 backend:
   name: github
   repo: walkthru-earth/opensensor-space
   branch: contributions-clean
+  base_url: https://opensensor-auth.walkthru-earth.workers.dev
   open_authoring: true
 
 publish_mode: editorial_workflow
