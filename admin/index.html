@@ -11,16 +11,19 @@
       margin: 0;
       background: #0f172a;
     }
-    /* Override Sveltia CMS header title */
-    .sui.text-xl.font-bold {
+    /* Override Sveltia CMS login page title */
+    h1 {
       visibility: hidden;
       position: relative;
+      height: 1.5em;
     }
-    .sui.text-xl.font-bold::after {
+    h1::after {
       content: "Join OpenSensor.Space";
       visibility: visible;
       position: absolute;
-      left: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
     }
   </style>
 </head>
