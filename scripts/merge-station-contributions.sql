@@ -11,10 +11,9 @@ CREATE TEMP TABLE existing_stations AS
 SELECT * FROM read_csv_auto('sources/stations/stations.csv');
 
 -- Create temp table with new stations from YAML files (.yml and .md)
--- Generate station_id as UUID from filename or use md5 hash of station_name + storage_url
 CREATE TEMP TABLE new_stations AS
 SELECT
-    COALESCE(yaml.station_id, uuid()) as station_id,
+    yaml.station_id,
     yaml.station_name,
     yaml.sensor_type,
     ST_Y(ST_GeomFromGeoJSON(yaml.location)) as latitude,
@@ -31,7 +30,7 @@ FROM (
     UNION ALL
     SELECT * FROM read_yaml_objects('content/stations/*.md')
 ) yaml
-WHERE yaml.station_name NOT IN (SELECT station_name FROM existing_stations);
+WHERE yaml.station_id NOT IN (SELECT station_id FROM existing_stations);
 
 -- Show what's being added
 SELECT 'New stations to add:' as message;

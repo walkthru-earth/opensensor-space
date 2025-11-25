@@ -37,8 +37,8 @@ collections:
     create: true
     extension: md
     format: yaml-frontmatter
-    slug: "{{slug}}"
-    identifier_field: station_name
+    slug: "{{fields.station_id}}"
+    identifier_field: station_id
     summary: "{{station_name}} ({{sensor_type}}) - {{station_type}}"
     sortable_fields:
       - station_name
@@ -46,6 +46,14 @@ collections:
       - station_type
       - submitted_at
     fields:
+      - name: station_id
+        label: Station ID (UUIDv7)
+        widget: string
+        pattern:
+          - "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          - "Must be a valid UUIDv7. Generate one at: https://www.uuidgenerator.net/version7"
+        hint: "Generate a UUIDv7 at https://www.uuidgenerator.net/version7 and paste it here"
+
       - name: station_name
         label: Station Name
         widget: string
