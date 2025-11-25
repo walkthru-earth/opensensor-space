@@ -3,7 +3,7 @@ name: Process Station Contributions
 on:
   push:
     branches:
-      - contributions
+      - contributions-clean
     paths:
       - 'content/stations/**'
   workflow_dispatch:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout contributions branch
         uses: actions/checkout@v4
         with:
-          ref: contributions
+          ref: contributions-clean
           fetch-depth: 0
 
       - name: Get stations.csv from main
