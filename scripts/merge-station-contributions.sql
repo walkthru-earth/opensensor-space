@@ -2,70 +2,35 @@
 -- Run with: duckdb -c ".read scripts/merge-station-contributions.sql"
 
 INSTALL yaml FROM community;
+INSTALL spatial;
 LOAD yaml;
+LOAD spatial;
 
 -- Create temp table with existing stations from CSV
 CREATE TEMP TABLE existing_stations AS
 SELECT * FROM read_csv_auto('sources/stations/stations.csv');
 
--- Create temp table with new stations from YAML files (.yml extension)
-CREATE TEMP TABLE new_stations_yml AS
-SELECT
-    yaml.station_id,
-    yaml.station_name,
-    yaml.sensor_type,
-    CASE
-        WHEN typeof(yaml.location) = 'VARCHAR' THEN
-            CAST(json_extract(yaml.location::JSON, '$.coordinates[1]') AS DOUBLE)
-        ELSE yaml.location.coordinates[2]
-    END as latitude,
-    CASE
-        WHEN typeof(yaml.location) = 'VARCHAR' THEN
-            CAST(json_extract(yaml.location::JSON, '$.coordinates[0]') AS DOUBLE)
-        ELSE yaml.location.coordinates[1]
-    END as longitude,
-    yaml.station_type,
-    yaml.storage_url,
-    COALESCE(yaml.description, '') as description,
-    COALESCE(yaml.contributor_name, '') as contributor_name,
-    COALESCE(yaml.contributor_url, '') as contributor_url,
-    yaml.submitted_at::VARCHAR as submitted_at,
-    'pending' as status
-FROM read_yaml_objects('content/stations/*.yml')
-WHERE yaml.station_id NOT IN (SELECT station_id FROM existing_stations);
-
--- Create temp table with new stations from YAML frontmatter in .md files
-CREATE TEMP TABLE new_stations_md AS
-SELECT
-    yaml.station_id,
-    yaml.station_name,
-    yaml.sensor_type,
-    CASE
-        WHEN typeof(yaml.location) = 'VARCHAR' THEN
-            CAST(json_extract(yaml.location::JSON, '$.coordinates[1]') AS DOUBLE)
-        ELSE yaml.location.coordinates[2]
-    END as latitude,
-    CASE
-        WHEN typeof(yaml.location) = 'VARCHAR' THEN
-            CAST(json_extract(yaml.location::JSON, '$.coordinates[0]') AS DOUBLE)
-        ELSE yaml.location.coordinates[1]
-    END as longitude,
-    yaml.station_type,
-    yaml.storage_url,
-    COALESCE(yaml.description, '') as description,
-    COALESCE(yaml.contributor_name, '') as contributor_name,
-    COALESCE(yaml.contributor_url, '') as contributor_url,
-    yaml.submitted_at::VARCHAR as submitted_at,
-    'pending' as status
-FROM read_yaml_objects('content/stations/*.md')
-WHERE yaml.station_id NOT IN (SELECT station_id FROM existing_stations)
-  AND yaml.station_id NOT IN (SELECT station_id FROM new_stations_yml);
-
--- Combine both sources
+-- Create temp table with new stations from YAML files (.yml and .md)
 CREATE TEMP TABLE new_stations AS
-SELECT * FROM new_stations_yml
-UNION ALL
-SELECT * FROM new_stations_md;
+SELECT
+    yaml.station_id,
+    yaml.station_name,
+    yaml.sensor_type,
+    ST_Y(ST_GeomFromGeoJSON(yaml.location)) as latitude,
+    ST_X(ST_GeomFromGeoJSON(yaml.location)) as longitude,
+    yaml.station_type,
+    yaml.storage_url,
+    COALESCE(yaml.description, '') as description,
+    COALESCE(yaml.contributor_name, '') as contributor_name,
+    COALESCE(yaml.contributor_url, '') as contributor_url,
+    yaml.submitted_at::VARCHAR as submitted_at,
+    'pending' as status
+FROM (
+    SELECT * FROM read_yaml_objects('content/stations/*.yml')
+    UNION ALL
+    SELECT * FROM read_yaml_objects('content/stations/*.md')
+)
+WHERE yaml.station_id NOT IN (SELECT station_id FROM existing_stations);
 
 -- Show what's being added
 SELECT 'New stations to add:' as message;
