@@ -38,9 +38,38 @@
     .walkthru-footer a:hover {
       text-decoration: underline;
     }
+    /* First-time contributor notice */
+    .fork-notice {
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+      border: 1px solid #0ea5e9;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #0c4a6e;
+    }
+    .fork-notice strong {
+      color: #0369a1;
+    }
+    .fork-notice a {
+      color: #0284c7;
+      font-weight: 600;
+    }
+    .fork-notice code {
+      background: #f0f9ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
+  <div class="fork-notice">
+    <strong>First time contributing?</strong> Before submitting your station, please
+    <a href="https://github.com/walkthru-earth/opensensor-space/fork" target="_blank">fork the repository</a> first.
+    This creates your own copy where your changes will be saved before creating a pull request to <code>contributions-clean</code> branch.
+  </div>
   <script src="https://unpkg.com/decap-cms@^3.9.0/dist/decap-cms.js"></script>
   <div class="walkthru-footer">
     A <a href="https://walkthru.earth" target="_blank">walkthru.earth</a> initiative

@@ -4,7 +4,7 @@
 name: Validate Station Contributions
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - contributions-clean
     paths:
@@ -21,6 +21,7 @@ jobs:
       - name: Checkout PR
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Get changed station files

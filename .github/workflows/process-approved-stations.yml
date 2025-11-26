@@ -18,32 +18,82 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Checkout
+      - name: Checkout contributions-clean
         uses: actions/checkout@v4
         with:
+          ref: contributions-clean
           fetch-depth: 0
 
-      - name: Setup DuckDB
+      - name: Fetch stations.csv from main
         run: |
-          curl -L https://github.com/duckdb/duckdb/releases/download/v1.1.3/duckdb_cli-linux-amd64.zip -o duckdb.zip
-          unzip duckdb.zip
-          chmod +x duckdb
-          sudo mv duckdb /usr/local/bin/
+          git fetch origin main
+          git checkout origin/main -- sources/stations/stations.csv 2>/dev/null || echo "station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status" > sources/stations/stations.csv
+          mkdir -p sources/stations
 
-      - name: Merge new stations to CSV
+      - name: Process station submissions
         run: |
-          echo "Running merge script..."
-          duckdb -c ".read scripts/merge-station-contributions.sql"
+          echo "Processing station files..."
+
+          # Create temp file for new entries
+          > /tmp/new_stations.csv
+
+          # Get existing station IDs
+          EXISTING_IDS=$(tail -n +2 sources/stations/stations.csv | cut -d',' -f1 | tr '\n' '|')
+
+          for file in content/stations/*.md; do
+            [ -f "$file" ] || continue
+            echo "Processing: $file"
+
+            # Parse frontmatter (between --- markers)
+            CONTENT=$(sed -n '/^---$/,/^---$/p' "$file" | sed '1d;$d')
+
+            # Extract fields
+            STATION_ID=$(echo "$CONTENT" | grep "^station_id:" | sed 's/station_id: *//' | tr -d '"')
+            STATION_NAME=$(echo "$CONTENT" | grep "^station_name:" | sed 's/station_name: *//' | tr -d '"')
+            SENSOR_TYPE=$(echo "$CONTENT" | grep "^sensor_type:" | sed 's/sensor_type: *//' | tr -d '"')
+            STATION_TYPE=$(echo "$CONTENT" | grep "^station_type:" | sed 's/station_type: *//' | tr -d '"')
+            STORAGE_URL=$(echo "$CONTENT" | grep "^storage_url:" | sed 's/storage_url: *//' | tr -d '"')
+            DESCRIPTION=$(echo "$CONTENT" | grep "^description:" | sed 's/description: *//' | tr -d '"')
+            CONTRIBUTOR_NAME=$(echo "$CONTENT" | grep "^contributor_name:" | sed 's/contributor_name: *//' | tr -d '"')
+            CONTRIBUTOR_URL=$(echo "$CONTENT" | grep "^contributor_url:" | sed 's/contributor_url: *//' | tr -d '"')
+            SUBMITTED_AT=$(echo "$CONTENT" | grep "^submitted_at:" | sed 's/submitted_at: *//' | tr -d '"')
+            STATUS=$(echo "$CONTENT" | grep "^status:" | sed 's/status: *//' | tr -d '"')
+
+            # Extract location coordinates (GeoJSON Point format)
+            LOCATION_LINE=$(echo "$CONTENT" | grep -A5 "^location:")
+            COORDS=$(echo "$LOCATION_LINE" | grep "coordinates:" | sed 's/.*coordinates: *\[//' | sed 's/\]//')
+            LONGITUDE=$(echo "$COORDS" | cut -d',' -f1 | tr -d ' ')
+            LATITUDE=$(echo "$COORDS" | cut -d',' -f2 | tr -d ' ')
+
+            # Skip if already exists
+            if echo "$EXISTING_IDS" | grep -q "$STATION_ID"; then
+              echo "  Skipping (already exists): $STATION_ID"
+              continue
+            fi
+
+            # Add to new stations
+            echo "  Adding: $STATION_NAME ($STATION_ID)"
+            echo "\"$STATION_ID\",\"$STATION_NAME\",\"$SENSOR_TYPE\",\"$LATITUDE\",\"$LONGITUDE\",\"$STATION_TYPE\",\"$STORAGE_URL\",\"$DESCRIPTION\",\"$CONTRIBUTOR_NAME\",\"$CONTRIBUTOR_URL\",\"$SUBMITTED_AT\",\"pending\"" >> /tmp/new_stations.csv
+          done
+
+          # Append new stations to CSV
+          if [ -s /tmp/new_stations.csv ]; then
+            cat /tmp/new_stations.csv >> sources/stations/stations.csv
+            echo "Added $(wc -l < /tmp/new_stations.csv) new station(s)"
+            echo "## New Stations Added" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/new_stations.csv >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No new stations to add"
+          fi
 
       - name: Check for changes
         id: check-changes
         run: |
-          if git diff --quiet sources/stations/stations.csv; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
+          git diff origin/main -- sources/stations/stations.csv > /tmp/diff.txt || true
+          if [ -s /tmp/diff.txt ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "## New Stations Added" >> $GITHUB_STEP_SUMMARY
-            git diff sources/stations/stations.csv | head -50 >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Create PR to main
@@ -52,9 +102,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Create branch for the update
-          BRANCH_NAME="station-update-$(date +%Y%m%d-%H%M%S)"
-          git checkout -b "$BRANCH_NAME"
+          # Create branch from main
+          git checkout -b station-update-$(date +%Y%m%d-%H%M%S) origin/main
+
+          # Copy the updated stations.csv
+          mkdir -p sources/stations
+          git checkout contributions-clean -- sources/stations/stations.csv 2>/dev/null || cp sources/stations/stations.csv sources/stations/
 
           # Commit changes
           git add sources/stations/stations.csv
@@ -63,11 +116,10 @@ jobs:
           Auto-merged from contributions-clean branch"
 
           # Push and create PR
-          git push origin "$BRANCH_NAME"
+          git push origin HEAD
 
           gh pr create \
             --base main \
-            --head "$BRANCH_NAME" \
             --title "Add approved station contributions" \
             --body "## Approved Stations
 
