@@ -1,0 +1,143 @@
+# Process approved station contributions after PR merge
+# Merges new stations into stations.csv using DuckDB and creates PR to main
+
+name: Process Approved Stations
+
+on:
+  push:
+    branches:
+      - contributions
+    paths:
+      - 'content/stations/**'
+
+jobs:
+  merge-stations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout contributions
+        uses: actions/checkout@v4
+        with:
+          ref: contributions
+          fetch-depth: 0
+
+      - name: Setup DuckDB
+        run: |
+          curl -L https://github.com/duckdb/duckdb/releases/download/v1.2.2/duckdb_cli-linux-amd64.zip -o duckdb.zip
+          unzip duckdb.zip
+          chmod +x duckdb
+          sudo mv duckdb /usr/local/bin/
+
+      - name: Fetch stations.csv from main
+        run: |
+          git fetch origin main
+          mkdir -p sources/stations
+          git checkout origin/main -- sources/stations/stations.csv 2>/dev/null || echo "station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status" > sources/stations/stations.csv
+
+      - name: Merge YAML stations to CSV with DuckDB
+        run: |
+          echo "Processing YAML station files with DuckDB..."
+
+          # Create the merge SQL script
+          cat > /tmp/merge-stations.sql << 'EOF'
+          -- Install and load YAML extension
+          INSTALL yaml FROM community;
+          LOAD yaml;
+
+          -- Read existing stations from CSV
+          CREATE TEMP TABLE existing_stations AS
+          SELECT * FROM read_csv_auto('sources/stations/stations.csv');
+
+          -- Read new stations from YAML files and extract fields
+          -- Note: location is stored as GeoJSON string '{"type":"Point","coordinates":[lng,lat]}'
+          CREATE TEMP TABLE new_stations AS
+          SELECT
+              station_id,
+              station_name,
+              sensor_type,
+              -- Extract coordinates from location GeoJSON string (coordinates: [lng, lat])
+              CAST(json_extract(location::JSON, '$.coordinates[1]') AS DOUBLE) as latitude,
+              CAST(json_extract(location::JSON, '$.coordinates[0]') AS DOUBLE) as longitude,
+              station_type,
+              storage_url,
+              COALESCE(description, '') as description,
+              COALESCE(contributor_name, '') as contributor_name,
+              COALESCE(contributor_url, '') as contributor_url,
+              submitted_at,
+              'pending' as status
+          FROM read_yaml_objects('content/stations/*.yml')
+          WHERE station_id NOT IN (SELECT station_id FROM existing_stations);
+
+          -- Show what's being added
+          SELECT 'New stations to add:' as message;
+          SELECT station_id, station_name, station_type FROM new_stations;
+
+          -- Export merged results (existing + new) to CSV
+          COPY (
+              SELECT * FROM existing_stations
+              UNION ALL
+              SELECT * FROM new_stations
+              ORDER BY submitted_at DESC
+          ) TO 'sources/stations/stations.csv' (HEADER, DELIMITER ',');
+
+          SELECT 'Done! Added ' || COUNT(*) || ' new station(s)' as result FROM new_stations;
+          EOF
+
+          # Run the merge
+          duckdb -c ".read /tmp/merge-stations.sql"
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          git diff origin/main -- sources/stations/stations.csv > /tmp/diff.txt || true
+          if [ -s /tmp/diff.txt ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "## Stations CSV Changes" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/diff.txt >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No new stations to add" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create PR to main
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create branch from main
+          BRANCH_NAME="station-update-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME" origin/main
+
+          # Copy the updated stations.csv
+          mkdir -p sources/stations
+          cp /tmp/stations.csv sources/stations/stations.csv 2>/dev/null || git checkout contributions -- sources/stations/stations.csv
+
+          # Commit changes
+          git add sources/stations/stations.csv
+          git commit -m "feat(stations): add approved station contributions
+
+          Auto-merged from contributions branch using DuckDB"
+
+          # Push and create PR
+          git push origin "$BRANCH_NAME"
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Add approved station contributions" \
+            --body "## Approved Stations
+
+          This PR adds newly approved stations from the contribution workflow.
+
+          ### Changes
+          - Updated \`sources/stations/stations.csv\` with new entries
+
+          ### Review
+          - Stations have been validated (S3 URLs checked)
+          - Ready to merge to update the dashboard"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,109 @@
+# Validate and process station contributions from Decap CMS
+# Triggers on PRs to contributions branch (from Open Authoring)
+
+name: Validate Station Contributions
+
+on:
+  pull_request_target:
+    branches:
+      - contributions
+    paths:
+      - 'content/stations/**'
+
+jobs:
+  validate-station:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Get changed station files
+        id: changed-files
+        uses: tj-actions/changed-files@v46
+        with:
+          files: content/stations/**/*.yml
+
+      - name: Validate station submissions
+        id: validate
+        run: |
+          echo "## Station Validation Report" >> $GITHUB_STEP_SUMMARY
+
+          ERRORS=""
+          VALID_COUNT=0
+
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Validating: $file"
+
+            # Extract YAML fields (pure YAML files, no frontmatter)
+            STATION_NAME=$(grep -m1 "^station_name:" "$file" | sed 's/station_name: *//' | tr -d '"')
+            STORAGE_URL=$(grep -m1 "^storage_url:" "$file" | sed 's/storage_url: *//' | tr -d '"')
+            STATION_ID=$(grep -m1 "^station_id:" "$file" | sed 's/station_id: *//' | tr -d '"')
+
+            echo "- Station: $STATION_NAME"
+            echo "- ID: $STATION_ID"
+            echo "- Storage URL: $STORAGE_URL"
+
+            # Validate UUIDv7 format
+            if ! echo "$STATION_ID" | grep -qE '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'; then
+              ERRORS="${ERRORS}- **$STATION_NAME**: Invalid UUIDv7 format\n"
+              continue
+            fi
+
+            # Validate S3 URL format
+            if ! echo "$STORAGE_URL" | grep -qE '^s3://[a-zA-Z0-9.-]+/.*$'; then
+              ERRORS="${ERRORS}- **$STATION_NAME**: Invalid S3 URL format\n"
+              continue
+            fi
+
+            # Extract bucket and path from S3 URL
+            BUCKET=$(echo "$STORAGE_URL" | sed 's|s3://||' | cut -d'/' -f1)
+            S3_PATH=$(echo "$STORAGE_URL" | sed 's|s3://[^/]*/||')
+
+            echo "- Checking S3 bucket: $BUCKET, path: $S3_PATH"
+
+            # Try to list the S3 path (public bucket, no credentials needed)
+            if aws s3 ls "s3://$BUCKET/$S3_PATH" --no-sign-request 2>/dev/null | head -1; then
+              echo "✅ S3 path exists and is accessible"
+              echo "- ✅ **$STATION_NAME** ($STATION_ID): S3 path verified" >> $GITHUB_STEP_SUMMARY
+              VALID_COUNT=$((VALID_COUNT + 1))
+            else
+              echo "❌ S3 path not accessible"
+              ERRORS="${ERRORS}- **$STATION_NAME**: S3 path not accessible (bucket: $BUCKET)\n"
+            fi
+          done
+
+          echo ""
+          echo "### Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Valid stations: $VALID_COUNT" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$ERRORS" ]; then
+            echo ""
+            echo "### Validation Errors" >> $GITHUB_STEP_SUMMARY
+            echo -e "$ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "has_errors=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_errors=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const hasErrors = '${{ steps.validate.outputs.has_errors }}' === 'true';
+            const body = hasErrors
+              ? '❌ **Station validation failed.** Please check the workflow summary for details.\n\nCommon issues:\n- S3 URL must point to a publicly accessible bucket\n- Station ID must be a valid UUIDv7'
+              : '✅ **Station validation passed!** The S3 storage URL is accessible and the station data looks good.\n\nThis PR is ready for review.';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
