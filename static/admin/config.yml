@@ -35,7 +35,7 @@ collections:
   - name: stations
     label: Sensor Stations
     label_singular: Station
-    description: "**First time?** [Fork the repository](https://github.com/walkthru-earth/opensensor-space/fork) before creating your first station. This enables the contribution workflow."
+    description: "Register your sensor station. After saving changes, create a pull request from your fork to the contributions branch."
     folder: content/stations
     create: true
     extension: yml
