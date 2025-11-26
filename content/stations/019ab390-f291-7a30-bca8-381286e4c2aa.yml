@@ -1,0 +1,8 @@
+station_id: 019ab390-f291-7a30-bca8-381286e4c2aa
+station_name: Enviro+ Outdoor New Cairo
+sensor_type: enviroplus
+station_type: Outdoor
+location: '{"type":"Point","coordinates":[31.490288,30.055625]}'
+storage_url: s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=019ab390-f291-7a30-bca8-381286e4c2aa/
+submitted_at: 2025-11-26
+status: pending
