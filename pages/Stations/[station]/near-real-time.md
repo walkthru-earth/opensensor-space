@@ -123,9 +123,19 @@ SELECT
     WHEN AVG(pm1) <= 25 THEN 'bg-yellow-50'
     ELSE 'bg-red-50'
   END as pm1_bg_color
-FROM all_stations
-WHERE station_id = '${params.station}'
-  AND timestamp >= (SELECT MAX(timestamp) - INTERVAL '5 minutes' FROM all_stations WHERE station_id = '${params.station}')
+FROM read_parquet(
+  'https://${(() => {
+    const url = '${station_info[0].storage_url}';
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    const hour = String(now.getUTCHours()).padStart(2, '0');
+    const min = now.getUTCMinutes();
+    const minBucket = String(min <= 10 ? 0 : Math.floor((min - 1) / 15) * 15).padStart(2, '0');
+    return url.replace('s3://', '').replace('opendata.source.coop/', 'opendata.source.coop.s3.amazonaws.com/') + `year=${year}/month=${month}/day=${day}/data_${hour}${minBucket}.parquet`;
+  })()}'
+)
 
 ```
 
