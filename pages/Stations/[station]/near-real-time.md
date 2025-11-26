@@ -4,7 +4,18 @@ hide_title: true
 ---
 
 ```sql station_info
-SELECT * FROM station_registry WHERE station_id = '${params.station}'
+SELECT
+  *,
+  -- Build the real-time parquet URL using DuckDB date functions
+  replace(replace(storage_url, 's3://', 'https://'), 'opendata.source.coop/', 'opendata.source.coop.s3.amazonaws.com/')
+    || 'year=' || year(current_timestamp AT TIME ZONE 'UTC')
+    || '/month=' || lpad(month(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
+    || '/day=' || lpad(day(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
+    || '/data_' || lpad(hour(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
+    || lpad((floor((minute(current_timestamp AT TIME ZONE 'UTC') - 1) / 15) * 15)::int::varchar, 2, '0')
+    || '.parquet' as realtime_parquet_url
+FROM station_registry
+WHERE station_id = '${params.station}'
 ```
 
 # {station_info[0].station_name} - Near Real-Time
@@ -13,7 +24,7 @@ SELECT * FROM station_registry WHERE station_id = '${params.station}'
 
 <Details title='About this dashboard'>
 
-This dashboard shows near real-time weather data from **{station_info[0].station_name}**. All metrics represent averages from the last 5 minutes of data collection.
+This dashboard shows near real-time weather data from **{station_info[0].station_name}**. All metrics represent averages from the last 15 minutes of data collection.
 
 - **Location**: {station_info[0].latitude}, {station_info[0].longitude}
 - **Sensor Type**: {station_info[0].sensor_type}
@@ -123,19 +134,7 @@ SELECT
     WHEN AVG(pm1) <= 25 THEN 'bg-yellow-50'
     ELSE 'bg-red-50'
   END as pm1_bg_color
-FROM read_parquet(
-  'https://${(() => {
-    const url = '${station_info[0].storage_url}';
-    const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
-    const hour = String(now.getUTCHours()).padStart(2, '0');
-    const min = now.getUTCMinutes();
-    const minBucket = String(min <= 10 ? 0 : Math.floor((min - 1) / 15) * 15).padStart(2, '0');
-    return url.replace('s3://', '').replace('opendata.source.coop/', 'opendata.source.coop.s3.amazonaws.com/') + `year=${year}/month=${month}/day=${day}/data_${hour}${minBucket}.parquet`;
-  })()}'
-)
+FROM read_parquet('${station_info[0].realtime_parquet_url}')
 
 ```
 
