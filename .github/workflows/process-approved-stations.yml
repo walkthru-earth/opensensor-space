@@ -9,6 +9,7 @@ on:
       - contributions
     paths:
       - 'content/stations/**'
+  workflow_dispatch:
 
 jobs:
   merge-stations:
