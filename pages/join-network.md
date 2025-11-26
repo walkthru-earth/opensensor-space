@@ -96,8 +96,11 @@ By creating a distributed sensor network, we can build comprehensive data collec
 
 ### Custom Deployments
 
-You can adapt this architecture to any sensor type:
-- Any edge device with network connectivity (ESP32, Arduino, Raspberry Pi, industrial PLCs)
+You can adapt this architecture to any Python-capable device:
+- Raspberry Pi (Zero 2 W, 3, 4, 5)
+- NVIDIA Jetson (Nano, Orin)
+- ASUS Tinker Board
+- Any Linux SBC with Python 3.12+ support
 - Your sensor hardware (temperature, pressure, vibration, chemical, optical, etc.)
 - Power supply appropriate for deployment (mains, battery, solar, PoE)
 
