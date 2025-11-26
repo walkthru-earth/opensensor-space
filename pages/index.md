@@ -175,7 +175,7 @@ Reference deployment using Enviro+ sensor: temperature, pressure, humidity, gas 
 - **Low carbon footprint** - Edge processing reduces data transmission by 60-90%
 - **Cost effective** - No databases, message brokers, or backend servers
 - **Scalable** - Object storage scales from single sensors to millions
-- **Hardware agnostic** - Works with Raspberry Pi, ESP32, Arduino, or any device
+- **Hardware agnostic** - Works with any Python-capable device (Raspberry Pi, NVIDIA Jetson, ASUS Tinker Board, etc.)
 - **Resilient** - Offline-first with automatic sync when connectivity returns
 - **Open** - Standard formats (Parquet, S3) accessible to any analytics tool
 
