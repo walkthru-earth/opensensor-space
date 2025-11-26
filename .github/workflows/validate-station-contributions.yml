@@ -28,7 +28,7 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v46
         with:
-          files: content/stations/**/*.md
+          files: content/stations/**/*.yml
 
       - name: Validate station submissions
         id: validate
@@ -41,10 +41,10 @@ jobs:
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "Validating: $file"
 
-            # Extract frontmatter fields
-            STATION_NAME=$(grep -m1 "^station_name:" "$file" | sed 's/station_name: //' | tr -d '"')
-            STORAGE_URL=$(grep -m1 "^storage_url:" "$file" | sed 's/storage_url: //' | tr -d '"')
-            STATION_ID=$(grep -m1 "^station_id:" "$file" | sed 's/station_id: //' | tr -d '"')
+            # Extract YAML fields (pure YAML files, no frontmatter)
+            STATION_NAME=$(grep -m1 "^station_name:" "$file" | sed 's/station_name: *//' | tr -d '"')
+            STORAGE_URL=$(grep -m1 "^storage_url:" "$file" | sed 's/storage_url: *//' | tr -d '"')
+            STATION_ID=$(grep -m1 "^station_id:" "$file" | sed 's/station_id: *//' | tr -d '"')
 
             echo "- Station: $STATION_NAME"
             echo "- ID: $STATION_ID"

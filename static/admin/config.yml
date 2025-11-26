@@ -38,8 +38,8 @@ collections:
     description: "**First time?** [Fork the repository](https://github.com/walkthru-earth/opensensor-space/fork) before creating your first station. This enables the contribution workflow."
     folder: content/stations
     create: true
-    extension: md
-    format: yaml-frontmatter
+    extension: yml
+    format: yaml
     slug: "{{fields.station_id}}"
     identifier_field: station_id
     summary: "{{station_name}} ({{sensor_type}}) - {{station_type}}"

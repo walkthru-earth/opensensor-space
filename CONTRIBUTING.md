@@ -30,7 +30,7 @@ sequenceDiagram
     participant S3 as S3 Storage
 
     U->>CMS: Submit station form
-    CMS->>Fork: Create MD file in fork
+    CMS->>Fork: Create YAML file in fork
     Fork->>PR: Create PR to contributions
     PR->>GH: Trigger validation
     GH->>S3: aws s3 ls --no-sign-request
@@ -50,7 +50,7 @@ sequenceDiagram
 
 | File | Description |
 |------|-------------|
-| `content/stations/*.md` | Station submissions (on contributions) |
+| `content/stations/*.yml` | Station submissions (on contributions) |
 | `sources/stations/stations.csv` | Station registry (on main) |
 
 ## Station Status

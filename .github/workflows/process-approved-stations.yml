@@ -1,5 +1,5 @@
 # Process approved station contributions after PR merge
-# Merges new stations into stations.csv and creates PR to main
+# Merges new stations into stations.csv using DuckDB and creates PR to main
 
 name: Process Approved Stations
 
@@ -24,67 +24,70 @@ jobs:
           ref: contributions
           fetch-depth: 0
 
+      - name: Setup DuckDB
+        run: |
+          curl -L https://github.com/duckdb/duckdb/releases/download/v1.2.2/duckdb_cli-linux-amd64.zip -o duckdb.zip
+          unzip duckdb.zip
+          chmod +x duckdb
+          sudo mv duckdb /usr/local/bin/
+
       - name: Fetch stations.csv from main
         run: |
           git fetch origin main
-          git checkout origin/main -- sources/stations/stations.csv 2>/dev/null || echo "station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status" > sources/stations/stations.csv
           mkdir -p sources/stations
+          git checkout origin/main -- sources/stations/stations.csv 2>/dev/null || echo "station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status" > sources/stations/stations.csv
 
-      - name: Process station submissions
+      - name: Merge YAML stations to CSV with DuckDB
         run: |
-          echo "Processing station files..."
+          echo "Processing YAML station files with DuckDB..."
 
-          # Create temp file for new entries
-          > /tmp/new_stations.csv
+          # Create the merge SQL script
+          cat > /tmp/merge-stations.sql << 'EOF'
+          -- Install and load YAML extension
+          INSTALL yaml FROM community;
+          LOAD yaml;
 
-          # Get existing station IDs
-          EXISTING_IDS=$(tail -n +2 sources/stations/stations.csv | cut -d',' -f1 | tr '\n' '|')
+          -- Read existing stations from CSV
+          CREATE TEMP TABLE existing_stations AS
+          SELECT * FROM read_csv_auto('sources/stations/stations.csv');
 
-          for file in content/stations/*.md; do
-            [ -f "$file" ] || continue
-            echo "Processing: $file"
+          -- Read new stations from YAML files and extract fields
+          -- Note: location is stored as GeoJSON string '{"type":"Point","coordinates":[lng,lat]}'
+          CREATE TEMP TABLE new_stations AS
+          SELECT
+              station_id,
+              station_name,
+              sensor_type,
+              -- Extract coordinates from location GeoJSON string (coordinates: [lng, lat])
+              CAST(json_extract(location::JSON, '$.coordinates[1]') AS DOUBLE) as latitude,
+              CAST(json_extract(location::JSON, '$.coordinates[0]') AS DOUBLE) as longitude,
+              station_type,
+              storage_url,
+              COALESCE(description, '') as description,
+              COALESCE(contributor_name, '') as contributor_name,
+              COALESCE(contributor_url, '') as contributor_url,
+              submitted_at,
+              'pending' as status
+          FROM read_yaml_objects('content/stations/*.yml')
+          WHERE station_id NOT IN (SELECT station_id FROM existing_stations);
 
-            # Parse frontmatter (between --- markers)
-            CONTENT=$(sed -n '/^---$/,/^---$/p' "$file" | sed '1d;$d')
+          -- Show what's being added
+          SELECT 'New stations to add:' as message;
+          SELECT station_id, station_name, station_type FROM new_stations;
 
-            # Extract fields
-            STATION_ID=$(echo "$CONTENT" | grep "^station_id:" | sed 's/station_id: *//' | tr -d '"')
-            STATION_NAME=$(echo "$CONTENT" | grep "^station_name:" | sed 's/station_name: *//' | tr -d '"')
-            SENSOR_TYPE=$(echo "$CONTENT" | grep "^sensor_type:" | sed 's/sensor_type: *//' | tr -d '"')
-            STATION_TYPE=$(echo "$CONTENT" | grep "^station_type:" | sed 's/station_type: *//' | tr -d '"')
-            STORAGE_URL=$(echo "$CONTENT" | grep "^storage_url:" | sed 's/storage_url: *//' | tr -d '"')
-            DESCRIPTION=$(echo "$CONTENT" | grep "^description:" | sed 's/description: *//' | tr -d '"')
-            CONTRIBUTOR_NAME=$(echo "$CONTENT" | grep "^contributor_name:" | sed 's/contributor_name: *//' | tr -d '"')
-            CONTRIBUTOR_URL=$(echo "$CONTENT" | grep "^contributor_url:" | sed 's/contributor_url: *//' | tr -d '"')
-            SUBMITTED_AT=$(echo "$CONTENT" | grep "^submitted_at:" | sed 's/submitted_at: *//' | tr -d '"')
-            STATUS=$(echo "$CONTENT" | grep "^status:" | sed 's/status: *//' | tr -d '"')
+          -- Export merged results (existing + new) to CSV
+          COPY (
+              SELECT * FROM existing_stations
+              UNION ALL
+              SELECT * FROM new_stations
+              ORDER BY submitted_at DESC
+          ) TO 'sources/stations/stations.csv' (HEADER, DELIMITER ',');
 
-            # Extract location coordinates (GeoJSON Point format)
-            LOCATION_LINE=$(echo "$CONTENT" | grep -A5 "^location:")
-            COORDS=$(echo "$LOCATION_LINE" | grep "coordinates:" | sed 's/.*coordinates: *\[//' | sed 's/\]//')
-            LONGITUDE=$(echo "$COORDS" | cut -d',' -f1 | tr -d ' ')
-            LATITUDE=$(echo "$COORDS" | cut -d',' -f2 | tr -d ' ')
+          SELECT 'Done! Added ' || COUNT(*) || ' new station(s)' as result FROM new_stations;
+          EOF
 
-            # Skip if already exists
-            if echo "$EXISTING_IDS" | grep -q "$STATION_ID"; then
-              echo "  Skipping (already exists): $STATION_ID"
-              continue
-            fi
-
-            # Add to new stations
-            echo "  Adding: $STATION_NAME ($STATION_ID)"
-            echo "\"$STATION_ID\",\"$STATION_NAME\",\"$SENSOR_TYPE\",\"$LATITUDE\",\"$LONGITUDE\",\"$STATION_TYPE\",\"$STORAGE_URL\",\"$DESCRIPTION\",\"$CONTRIBUTOR_NAME\",\"$CONTRIBUTOR_URL\",\"$SUBMITTED_AT\",\"pending\"" >> /tmp/new_stations.csv
-          done
-
-          # Append new stations to CSV
-          if [ -s /tmp/new_stations.csv ]; then
-            cat /tmp/new_stations.csv >> sources/stations/stations.csv
-            echo "Added $(wc -l < /tmp/new_stations.csv) new station(s)"
-            echo "## New Stations Added" >> $GITHUB_STEP_SUMMARY
-            cat /tmp/new_stations.csv >> $GITHUB_STEP_SUMMARY
-          else
-            echo "No new stations to add"
-          fi
+          # Run the merge
+          duckdb -c ".read /tmp/merge-stations.sql"
 
       - name: Check for changes
         id: check-changes
@@ -92,8 +95,11 @@ jobs:
           git diff origin/main -- sources/stations/stations.csv > /tmp/diff.txt || true
           if [ -s /tmp/diff.txt ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "## Stations CSV Changes" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/diff.txt >> $GITHUB_STEP_SUMMARY
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No new stations to add" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Create PR to main
@@ -103,23 +109,25 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create branch from main
-          git checkout -b station-update-$(date +%Y%m%d-%H%M%S) origin/main
+          BRANCH_NAME="station-update-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME" origin/main
 
           # Copy the updated stations.csv
           mkdir -p sources/stations
-          git checkout contributions -- sources/stations/stations.csv 2>/dev/null || cp sources/stations/stations.csv sources/stations/
+          cp /tmp/stations.csv sources/stations/stations.csv 2>/dev/null || git checkout contributions -- sources/stations/stations.csv
 
           # Commit changes
           git add sources/stations/stations.csv
           git commit -m "feat(stations): add approved station contributions
 
-          Auto-merged from contributions branch"
+          Auto-merged from contributions branch using DuckDB"
 
           # Push and create PR
-          git push origin HEAD
+          git push origin "$BRANCH_NAME"
 
           gh pr create \
             --base main \
+            --head "$BRANCH_NAME" \
             --title "Add approved station contributions" \
             --body "## Approved Stations
 
