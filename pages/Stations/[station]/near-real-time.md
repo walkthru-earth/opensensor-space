@@ -56,6 +56,25 @@ SELECT
 FROM ${raw_data}
 ```
 
+```sql minute_data
+SELECT
+  date_trunc('minute', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as minute,
+  round(AVG(temperature), 1) as temperature,
+  round(AVG(humidity), 1) as humidity,
+  round(AVG(pressure), 1) as pressure,
+  round(AVG(oxidised), 1) as oxidised,
+  round(AVG(reducing), 1) as reducing,
+  round(AVG(nh3), 1) as nh3,
+  round(AVG(lux), 1) as lux,
+  round(AVG(proximity), 0) as proximity,
+  round(AVG(pm1), 1) as pm1,
+  round(AVG(pm25), 1) as pm25,
+  round(AVG(pm10), 1) as pm10
+FROM ${raw_data}
+GROUP BY 1
+ORDER BY minute
+```
+
 <Alert status="info">
   Last reading: <strong>{station_data[0].last_reading_time}</strong>
 </Alert>
@@ -99,10 +118,11 @@ FROM ${raw_data}
   </Grid>
 
   <LineChart
-    data={raw_data}
-    x=timestamp
+    data={minute_data}
+    x=minute
     y={['temperature', 'humidity']}
-    title="Temperature & Humidity Trends"
+    title="Temperature & Humidity (1-min avg)"
+    xFmt="HH:mm"
     chartAreaHeight=200
   />
 
@@ -141,10 +161,11 @@ FROM ${raw_data}
   </Grid>
 
   <LineChart
-    data={raw_data}
-    x=timestamp
+    data={minute_data}
+    x=minute
     y={['pm1', 'pm25', 'pm10']}
-    title="Particulate Matter Trends"
+    title="Particulate Matter (1-min avg)"
+    xFmt="HH:mm"
     chartAreaHeight=200
   />
 
@@ -183,10 +204,11 @@ FROM ${raw_data}
   </Grid>
 
   <LineChart
-    data={raw_data}
-    x=timestamp
+    data={minute_data}
+    x=minute
     y={['oxidised', 'reducing', 'nh3']}
-    title="Gas Sensor Trends"
+    title="Gas Sensors (1-min avg)"
+    xFmt="HH:mm"
     chartAreaHeight=200
   />
 
@@ -216,10 +238,11 @@ FROM ${raw_data}
   </Grid>
 
   <LineChart
-    data={raw_data}
-    x=timestamp
+    data={minute_data}
+    x=minute
     y={['lux', 'proximity']}
-    title="Light & Proximity Trends"
+    title="Light & Proximity (1-min avg)"
+    xFmt="HH:mm"
     chartAreaHeight=200
   />
 
