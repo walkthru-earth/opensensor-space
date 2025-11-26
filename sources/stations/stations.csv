@@ -1,2 +1,3 @@
 station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status
+019ab390-f291-7a30-bca8-381286e4c2aa,Enviro+ Outdoor New Cairo,enviroplus,30.055625,31.490288,Outdoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=019ab390-f291-7a30-bca8-381286e4c2aa/,"","","",2025-11-26,pending
 0195ae3c-43e0-7624-8c5c-7424adbcc30d,Enviro+,enviroplus,30.0626,31.4916,Indoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/,Reference environmental monitoring station,OpenSensor Team,https://opensensor.space,2025-04-01,approved
