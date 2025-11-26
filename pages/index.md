@@ -8,7 +8,7 @@ hide_title: false
 <LastRefreshed/>
 
 <Details title='About this platform'>
-  opensensor.space is a cloud-native sensor data platform built on open standards. Sensor data flows from edge devices (Raspberry Pi, ESP32, or any IoT hardware) directly to cloud storage in Parquet format, then visualized with Evidence.dev and DuckDB-wasm. This reference implementation demonstrates environmental monitoring, but the architecture scales to any sensor type.
+  Cloud-native sensor data platform. Edge devices stream data directly to object storage in Parquet format, visualized with Evidence.dev and DuckDB-wasm. No databases or backend servers required.
 </Details>
 
 <Image
@@ -21,7 +21,7 @@ hide_title: false
 ## Quick Station Access
 
 <div class="border rounded-lg p-5 my-3 mx-1 hover:shadow-lg transition bg-blue-50 dark:bg-blue-900/30">
-    <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/near-real-time" class="flex items-center justify-between">
+    <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/near-real-time" class="flex items-center justify-between">
         <div>
             <h3 class="text-xl font-bold mb-2">Near Real-Time Dashboard</h3>
             <p class="text-sm">View the latest 5-minute weather readings</p>
@@ -36,7 +36,7 @@ hide_title: false
 
 <Grid cols=2>
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-green-50 dark:bg-green-900/30">
-        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/temperature-and-humidity" class="flex items-center justify-between">
+        <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/temperature-and-humidity" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Temperature and Humidity</h3>
                 <p class="text-xs mt-1">Temperature trends and humidity analysis</p>
@@ -48,7 +48,7 @@ hide_title: false
     </div>
     
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-amber-50 dark:bg-amber-900/30">
-        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/gas-sensors" class="flex items-center justify-between">
+        <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/gas-sensors" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Gas Sensors</h3>
                 <p class="text-xs mt-1">Oxidised, reducing, and NH3 measurements</p>
@@ -60,7 +60,7 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-yellow-50 dark:bg-yellow-900/30">
-        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/light-and-proximity" class="flex items-center justify-between">
+        <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/light-and-proximity" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Light and Proximity</h3>
                 <p class="text-xs mt-1">Ambient light levels and proximity detection</p>
@@ -72,7 +72,7 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-purple-50 dark:bg-purple-900/30">
-        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/pressure" class="flex items-center justify-between">
+        <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/pressure" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Atmospheric Pressure</h3>
                 <p class="text-xs mt-1">Barometric pressure trends and analysis</p>
@@ -84,7 +84,7 @@ hide_title: false
     </div>
 
     <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-red-50 dark:bg-red-900/30">
-        <a href="/Stations/0195ae3c-43e0-7624-8c5c-7424adbcc30d/particulate-matter" class="flex items-center justify-between">
+        <a href="/Stations/019ab390-f291-7a30-bca8-381286e4c2aa/particulate-matter" class="flex items-center justify-between">
             <div>
                 <h3 class="font-bold">Particulate Matter</h3>
                 <p class="text-xs mt-1">PM1.0, PM2.5, and PM10 air quality analysis</p>
@@ -98,17 +98,15 @@ hide_title: false
 
 ## From Traditional IoT to Cloud-Native
 
-Traditional IoT architectures typically rely on local hubs - a sensor device sending data via MQTT or HTTP to a central server (often running databases like InfluxDB or TimescaleDB). This works, but introduces complexity: multiple layers of infrastructure, potential data loss during outages, and scaling challenges as sensor networks grow.
+Traditional IoT relies on local hubs - sensors sending data via MQTT to central servers running databases like InfluxDB. This introduces complexity and potential data loss during outages.
 
-### Our First Trial: The Traditional Approach
+### Our First Trial
 
-In early 2024, we built our first environmental monitoring station following the conventional approach - a Raspberry Pi Zero W with an Enviro+ sensor connected to an Intel NUC that served as a data hub. The NUC collected sensor data and stored it in a TimeScaleDB database. It worked, but it wasn't as elegant or efficient as it could be. If the hub disconnected for any reason - like a power outage - all the readings and measurements sent via MQTT from the sensors would be lost.
+In early 2024, we built our first environmental monitoring station - a Raspberry Pi Zero W with an Enviro+ sensor connected to an Intel NUC hub running TimeScaleDB. It worked, but when the hub disconnected, all readings sent via MQTT were lost.
 
-After a year of experimenting with cloud-native technologies, we had a realization: **Why use extra energy and resources when the Raspberry Pi Zero W already has WiFi?**
+After a year of experimenting, we had a realization: **Why use extra energy and resources when the Raspberry Pi already has WiFi?**
 
-This insight became the foundation of opensensor.space - eliminating unnecessary infrastructure by leveraging what edge devices already have: **network connectivity and storage capabilities**.
-
-Instead of managing databases and message brokers, sensors write directly to cloud object storage in open formats. This trial taught us that simplicity scales better than complexity.
+This insight became the foundation of opensensor.space - eliminating unnecessary infrastructure by leveraging what edge devices already have. Simplicity scales better than complexity.
 
 <Image
     url="/20250408-cloud-native-weather-station1.png"
@@ -119,13 +117,13 @@ Instead of managing databases and message brokers, sensors write directly to clo
 
 ## Architecture Overview
 
-This reference implementation uses environmental sensors, but the pattern works for any IoT data source. Explore the data structure using DuckDB:
+The pattern works for any IoT data source. Explore the data structure using DuckDB:
 ```sql
 SUMMARIZE
     SELECT
         *
     FROM
-        read_parquet('s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/**/*.parquet', union_by_name=true, hive_partitioning=true);
+        read_parquet('s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=019ab390-f291-7a30-bca8-381286e4c2aa/**/*.parquet', union_by_name=true, hive_partitioning=true);
 ```
 
 ```sql latest_data_schema
@@ -155,104 +153,50 @@ SUMMARIZE SELECT * FROM all_stations
   <Column id="count" title="# Readings" width={100} contentType="colorscale" colorScale="#90caf9" />
 </DataTable>
 
-Instead of relying on local database servers, edge devices stream sensor measurements directly to cloud storage in **Parquet** format. This approach eliminates unnecessary infrastructure while maintaining full functionality and enabling massive scale.
+Edge devices stream measurements directly to cloud storage in **Parquet** format - no databases required.
 
 ### How It Works
 
-The reference implementation:
+1. Sensors collect readings every 5 seconds, batched into 15-minute Parquet files
+2. Files stored in Hive-partitioned format: `station={ID}/year={year}/month={month}/day={day}/data_{time}.parquet`
+3. Data queried directly using [DuckDB-wasm](https://duckdb.org/docs/stable/clients/wasm/overview.html) in the browser with [Evidence.dev](https://evidence.dev)
 
-1. A Python script runs as a **cron job** every 5 minutes on the Raspberry Pi
-2. Each Parquet file contains 1-second interval measurements from the Enviro+ sensor
-3. Files are stored in a partitioned format for near real-time dashboarding:
-   ```sql
-   station={STATION_ID}/year={year}/month={month}/day={day}/data_{time}.parquet
-   ```
-4. A GitHub Actions workflow runs daily to aggregate the small 5-minute files into consolidated daily files, making queries more efficient and reducing the number of small files
-5. Data is queried directly using [**DuckDB-wasm**](https://duckdb.org/docs/stable/clients/wasm/overview.html) in the browser with [Evidence.dev](https://evidence.dev), creating a truly cloud-native dashboard without any intermediate servers
-
-All Parquet files are hosted on [Source Cooperative](https://source.coop), a [Radiant Earth](https://radiant.earth) initiative that provides free S3-compatible object storage for open datasets. This allows us to share sensor data openly while avoiding storage costs.
+Our data is hosted on [Source Cooperative](https://source.coop) - free S3-compatible storage for open datasets (requires approval from Radiant Earth). Any S3-compatible storage works.
 
 ## Example: Environmental Monitoring
 
-This reference deployment uses the Enviro+ sensor pack to demonstrate the platform's capabilities with environmental data:
-
-- Temperature
-- Pressure
-- Humidity
-- Oxidized gases
-- Reducing gases
-- NH3 (ammonia)
-- Light levels (lux)
-- Proximity
-- Particulate Matter (PM1.0, PM2.5, and PM10)
-
-<Alert status="info">
-  <strong>Update (April 4, 2025):</strong> Particulate Matter sensor data is now available! All files from <a href="https://source.coop/walkthru-earth/opensensor-space/">opensensor-space</a> include PM1.0, PM2.5, and PM10 measurements from the PMS5003 sensor, along with particle count data for different sizes.
-</Alert>
-
-You can find more information about the Enviro+ here:
+Reference deployment using Enviro+ sensor: temperature, pressure, humidity, gas sensors, light, proximity, and particulate matter (PM1.0, PM2.5, PM10).
 
 - [Enviro+ Product Page](https://shop.pimoroni.com/products/enviro?variant=31155658457171)
-- [Getting Started with Enviro+](https://learn.pimoroni.com/article/getting-started-with-enviro-plus)
-- [Enviro+ Python Library](https://github.com/pimoroni/enviroplus-python)
+- [enviroplus-community Library](https://github.com/walkthru-earth/enviroplus-python)
 
 ## Platform Benefits
 
-opensensor.space demonstrates how IoT devices can participate in cloud-native architectures without complex infrastructure. By storing data in open formats like Parquet and using client-side processing with tools like DuckDB and Evidence, sensor networks become:
-
-- **Minimum carbon footprint** - Edge processing reduces data transmission by 60-90%, significantly cutting energy consumption and CO2 emissions compared to continuous cloud streaming. With data centers projected to consume 33% of ICT industry electricity by 2025, edge-first architectures are critical for sustainable IoT
-- **Cost effective** - No databases, message brokers, or backend servers to manage
-- **Infinitely scalable** - Object storage scales from single sensors to millions
-- **Hardware agnostic** - Works with Raspberry Pi, ESP32, Arduino, or any device that can write files
-- **Resilient** - Offline-first architecture with automatic sync when connectivity returns
+- **Low carbon footprint** - Edge processing reduces data transmission by 60-90%
+- **Cost effective** - No databases, message brokers, or backend servers
+- **Scalable** - Object storage scales from single sensors to millions
+- **Hardware agnostic** - Works with Raspberry Pi, ESP32, Arduino, or any device
+- **Resilient** - Offline-first with automatic sync when connectivity returns
 - **Open** - Standard formats (Parquet, S3) accessible to any analytics tool
-- **Energy efficient** - Minimal computational overhead on edge devices, ideal for battery or solar-powered deployments
 
-Sensors operate autonomously even when offline. When internet connectivity is unavailable, the system continues collecting and storing readings locally in Parquet files. Once connection is restored, accumulated data automatically synchronizes to cloud object storage - ensuring zero data loss during network outages.
+Sensors operate autonomously even when offline - zero data loss during network outages.
 
 ## Roadmap
 
-We're expanding opensensor.space to support diverse sensor deployments and use cases:
-
-### Mobile & Edge Deployments
-1. **LoRa mesh networks** - Multiple sensors communicate via LoRa modules with one designated gateway sensor responsible for WiFi sync to cloud storage. Recent research shows this architecture increases packet delivery ratios to 73.78% for sensors beyond 5.8km from the gateway, enabling large-area coverage with minimal infrastructure
-2. **GPS-enabled sensors** - Location tracking for mobile sensor networks
-3. **Vehicle-mounted units** - Moving sensors for spatial data collection (air quality mapping, traffic analysis, etc.)
-4. **Offline-first edge devices** - Collect data continuously, sync when connectivity returns
-5. **Ultra-low-power sensors** - ESP32/LoRaWAN implementations optimized for battery or solar power, minimizing carbon footprint
-
-### Platform Enhancements
-- **Multi-sensor support** - Reference implementations for industrial sensors, agricultural IoT, smart city applications
-- **Adaptive sampling** - Intelligent data collection based on event triggers or anomaly detection
-- **Client-side analytics** - Advanced DuckDB-wasm visualizations and real-time processing
-- **Edge ML** - TinyML integration for on-device inference before cloud sync
-
-### Developer Experience
-- **SDK libraries** - Python, JavaScript, and Rust libraries for easy integration
-- **Terraform modules** - Infrastructure-as-code for cloud storage setup
-- **Docker containers** - Containerized edge runtimes for easy deployment
+- **GPS-enabled sensors** - Location tracking for mobile sensor networks
+- **Multi-sensor support** - Industrial sensors, agricultural IoT, smart city applications
+- **SDK libraries** - Python, JavaScript, and Rust for easy integration
 
 <Alert status="success">
   <strong>Ready to deploy your sensors?</strong> Check out the <a href="/join-network">Join the Sensor Network</a> page for instructions on how to contribute to this project!
 </Alert>
 
-This dashboard is built with [Evidence](https://evidence.dev), which allows us to query and visualize the Parquet data directly in the browser - no backend required!
-
 ## Resources
 
-- [Project Repository](https://github.com/walkthru-earth/opensensor-space-edge)
+- [opensensor-enviroplus](https://github.com/walkthru-earth/opensensor-enviroplus) - Data collector CLI
+- [enviroplus-community](https://github.com/walkthru-earth/enviroplus-python) - Sensor drivers
 - [Data Repository](https://source.coop/walkthru-earth/opensensor-space/)
 
-### Research & Further Reading
+---
 
-**LoRa Mesh Networks:**
-- [Performance Evaluation of a Mesh-Topology LoRa Network](https://www.mdpi.com/1424-8220/25/5/1602) - Recent 2025 research on mesh architectures
-- [LoRa-Based Mesh Network for Peer-to-Peer Long-Range Communication](https://pmc.ncbi.nlm.nih.gov/articles/PMC8272137/)
-- [RAKwireless Gateway Mesh Solution](https://www.rakwireless.com/en-us/expand-lorawan-network-with-gateway-mesh)
-
-**Edge Computing & Sustainability:**
-- [Edge Computing and Sustainability: Reducing Carbon Footprints](https://snuc.com/blog/edge-computing-and-sustainability/)
-- [Edge vs. Cloud in IoT: Optimizing Performance and Cost](https://spicefactory.co/blog/2025-07-24-edge-vs-cloud-in-iot-optimizing-performance-and-cost-at-scale/)
-- [Edge Computing for Sustainable Future](https://objectbox.io/why-do-we-need-edge-computing-for-a-sustainable-future/)
-
-We'd love to hear your feedback and suggestions on building sustainable, scalable sensor networks!
+*opensensor.space is an initiative by [walkthru.earth](https://walkthru.earth)*
