@@ -22,6 +22,15 @@ WHERE station_id = '${params.station}'
 
 <LastRefreshed/>
 
+```sql last_reading
+SELECT max(timestamp) as last_reading_time
+FROM read_parquet('${station_info[0].realtime_parquet_url}')
+```
+
+<Alert status="info">
+  Last reading: <strong>{last_reading[0].last_reading_time}</strong>
+</Alert>
+
 <Details title='About this dashboard'>
 
 This dashboard shows near real-time weather data from **{station_info[0].station_name}**. All metrics represent averages from the last 15 minutes of data collection.

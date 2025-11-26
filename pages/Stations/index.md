@@ -26,7 +26,7 @@ FROM station_registry
 SELECT COUNT(*) as total FROM station_registry
 ```
 
-<Grid cols=3>
+<Grid cols=2>
   <BigValue
     data={station_count}
     value=total
@@ -37,12 +37,6 @@ SELECT COUNT(*) as total FROM station_registry
     data={stations}
     value=station_name
     title="Latest Station"
-  />
-  <BigValue
-    data={station_count}
-    value=total
-    title="Countries"
-    fmt="#,##0"
   />
 </Grid>
 
