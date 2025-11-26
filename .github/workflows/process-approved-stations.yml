@@ -94,6 +94,9 @@ jobs:
       - name: Check for changes
         id: check-changes
         run: |
+          # Save the merged CSV before switching branches
+          cp sources/stations/stations.csv /tmp/stations_merged.csv
+
           git diff origin/main -- sources/stations/stations.csv > /tmp/diff.txt || true
           if [ -s /tmp/diff.txt ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
@@ -114,9 +117,9 @@ jobs:
           BRANCH_NAME="station-update-$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH_NAME" origin/main
 
-          # Copy the updated stations.csv
+          # Copy the merged stations.csv from temp
           mkdir -p sources/stations
-          cp /tmp/stations.csv sources/stations/stations.csv 2>/dev/null || git checkout contributions -- sources/stations/stations.csv
+          cp /tmp/stations_merged.csv sources/stations/stations.csv
 
           # Commit changes
           git add sources/stations/stations.csv
