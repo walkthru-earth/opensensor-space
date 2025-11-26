@@ -106,14 +106,21 @@ You can adapt this architecture to any Python-capable device:
 
 ## Software Installation
 
-### Step 1: Install UV Package Manager
+### Step 1: Update System and Install Git
+
+```bash
+sudo apt-get update
+sudo apt-get install git
+```
+
+### Step 2: Install UV Package Manager
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-source $HOME/.cargo/env
+source $HOME/.local/bin/env
 ```
 
-### Step 2: Install OpenSensor Collector
+### Step 3: Install OpenSensor Collector
 
 ```bash
 # Clone repository
@@ -124,12 +131,12 @@ cd opensensor-enviroplus
 uv venv --python 3.12
 uv sync
 
-# Configure hardware interfaces (I2C, SPI, UART)
-uv run enviroplus-setup --install
+# Configure hardware interfaces (I2C, SPI, UART) - requires sudo
+sudo $(uv run which enviroplus-setup) --install
 sudo reboot
 ```
 
-### Step 3: Configure Your Station
+### Step 4: Configure Your Station
 
 ```bash
 cd opensensor-enviroplus
@@ -138,20 +145,26 @@ cd opensensor-enviroplus
 uv run opensensor setup
 ```
 
-### Step 4: Test and Verify
+### Step 5: Test and Verify
 
 ```bash
-# Watch live logs for ~15 minutes to verify everything works
+# Start collector in foreground to verify everything works
+# Note: PMS5003 sensor requires sudo for serial port access
+sudo $(uv run which opensensor) start
+```
+
+Watch the output for ~15 minutes until you see a successful sync. Press Ctrl+C to stop when verified.
+
+You can also monitor logs in a separate terminal:
+```bash
 uv run opensensor logs --follow
 ```
 
-Wait for at least one successful sync to confirm data is flowing to your storage.
-
-### Step 5: Enable as Service
+### Step 6: Enable as Service
 
 ```bash
-# Start as systemd service (auto-starts on boot)
-uv run opensensor service setup
+# Install and start as systemd service (auto-starts on boot, runs as root)
+sudo $(uv run which opensensor) service setup
 ```
 
 That's it! Your sensor is now collecting data and syncing to the cloud.
