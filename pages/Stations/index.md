@@ -48,9 +48,6 @@ SELECT COUNT(*) as total FROM station_registry
     long=longitude
     pointName=station_name
     height=500
-    startingZoom=3
-    startingLat=25
-    startingLong=30
     size=12
     opacity=0.9
     borderWidth=2
