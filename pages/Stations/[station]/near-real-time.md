@@ -6,13 +6,13 @@ hide_title: true
 ```sql station_info
 SELECT
   *,
-  -- Build the real-time parquet URL using DuckDB date functions
-  replace(replace(storage_url, 's3://', 'https://'), 'opendata.source.coop/', 'opendata.source.coop.s3.amazonaws.com/')
-    || 'year=' || year(current_timestamp AT TIME ZONE 'UTC')
+  -- Build the real-time parquet URL using DuckDB date functions (HTTPS for mobile compatibility)
+  'https://data.source.coop/walkthru-earth/opensensor-space/enviroplus/station=' || station_id
+    || '/year=' || year(current_timestamp AT TIME ZONE 'UTC')
     || '/month=' || lpad(month(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
     || '/day=' || lpad(day(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
     || '/data_' || lpad(hour(current_timestamp AT TIME ZONE 'UTC')::varchar, 2, '0')
-    || lpad((floor((minute(current_timestamp AT TIME ZONE 'UTC') - 1) / 15) * 15)::int::varchar, 2, '0')
+    || lpad((floor(minute(current_timestamp AT TIME ZONE 'UTC') / 15) * 15)::int::varchar, 2, '0')
     || '.parquet' as realtime_parquet_url
 FROM station_registry
 WHERE station_id = '${params.station}'
