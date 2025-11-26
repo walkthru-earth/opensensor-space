@@ -184,8 +184,8 @@ Sensors operate autonomously even when offline - zero data loss during network o
 ## Roadmap
 
 - **GPS-enabled sensors** - Location tracking for mobile sensor networks
-- **Multi-sensor support** - Industrial sensors, agricultural IoT, smart city applications
-- **SDK libraries** - Python, JavaScript, and Rust for easy integration
+- **Multi-sensor support** - LoRa, radio (AIS), industrial sensors, agricultural IoT, smart city applications
+- **One-line setup** - Simple shell script for instant edge device configuration
 
 <Alert status="success">
   <strong>Ready to deploy your sensors?</strong> Check out the <a href="/join-network">Join the Sensor Network</a> page for instructions on how to contribute to this project!
