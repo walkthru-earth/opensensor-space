@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Evidence
+.evidence/
+
+# OS
+.DS_Store
+
+# Environment
+.env
+.env.local
