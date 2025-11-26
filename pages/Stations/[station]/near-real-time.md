@@ -33,7 +33,7 @@ SELECT
   pm1,
   pm25,
   pm10
-FROM read_parquet('https://data.source.coop/walkthru-earth/opensensor-space/enviroplus/station=${params.station}/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, "0")}/day=${String(new Date().getUTCDate()).padStart(2, "0")}/data_${String(new Date().getUTCHours()).padStart(2, "0")}${String((m => m < 15 ? 0 : Math.floor(m / 15) * 15)(new Date().getUTCMinutes())).padStart(2, "0")}.parquet')
+FROM read_parquet('https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=${params.station}/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, "0")}/day=${String(new Date().getUTCDate()).padStart(2, "0")}/data_${String(new Date().getUTCHours()).padStart(2, "0")}${String((m => m < 15 ? 0 : Math.floor(m / 15) * 15)(new Date().getUTCMinutes())).padStart(2, "0")}.parquet')
 ORDER BY timestamp
 ```
 
