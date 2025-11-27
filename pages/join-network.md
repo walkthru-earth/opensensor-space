@@ -316,7 +316,7 @@ Ensure your system is up to date and has git installed.
 
 ```bash
 sudo apt-get update
-sudo apt-get install git -y
+sudo apt-get install python3-dev git -y
 ```
 
 ### Step 2: Install UV Package Manager
@@ -328,50 +328,26 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
 ```
 
-### Step 3: Install OpenSensor Collector
+### Step 3: Configure Hardware
 
-Clone the repository and set up the environment.
+Install the sensor drivers and configure the hardware interfaces (I2C, SPI, UART).
 
+Install dependencies and configure hardware:
 ```bash
-# Clone repository
-git clone https://github.com/walkthru-earth/opensensor-enviroplus.git
-cd opensensor-enviroplus
+sudo $(which uvx) --from enviroplus-community enviroplus-setup --install
+```
 
-# Create isolated environment and install dependencies
-uv venv --python 3.12
-uv sync
-
-# Configure hardware interfaces (I2C, SPI, UART) - requires sudo
-sudo $(uv run which enviroplus-setup) --install
+Reboot to apply hardware changes:
+```bash
 sudo reboot
 ```
 
-<Details title="What does this install?">
-
-**[enviroplus-community](https://github.com/walkthru-earth/enviroplus-python)** - Sensor drivers for:
-- BME280 (temperature, humidity, pressure)
-- LTR559 (light and proximity)
-- MICS6814 (gas sensor)
-- PMS5003 (particulate matter)
-
-**[opensensor-enviroplus](https://github.com/walkthru-earth/opensensor-enviroplus)** - Data collector with:
-- UUID v7 station IDs (time-ordered)
-- Polars + Apache Arrow for efficient processing
-- Hive-partitioned Parquet output
-- Automatic S3 sync via obstore (50% faster than boto3)
-- Runs as systemd service with auto-restart
-- Temperature compensation for CPU heat
-- Offline-first with automatic sync when connected
-
-</Details>
-
 ### Step 4: Configure Your Station
 
-Run the interactive setup wizard. This will generate your unique Station ID and configure your S3 credentials.
+After rebooting, SSH back in and run the setup wizard. This will generate your unique Station ID and configure your S3 credentials.
 
 ```bash
-cd opensensor-enviroplus
-uv run opensensor setup
+uvx --from opensensor-enviroplus opensensor setup
 ```
 
 <Alert status="warning">
@@ -382,9 +358,9 @@ uv run opensensor setup
 
 Start the collector manually to verify everything is working.
 
+Start collector in foreground:
 ```bash
-# Start collector in foreground
-sudo $(uv run which opensensor) start
+sudo $(which uvx) --from opensensor-enviroplus opensensor start
 ```
 
 Watch the output for ~15 minutes until you see a successful sync. Press `Ctrl+C` to stop when verified.
@@ -394,7 +370,7 @@ Watch the output for ~15 minutes until you see a successful sync. Press `Ctrl+C`
 Install the systemd service so the collector starts automatically on boot.
 
 ```bash
-sudo $(uv run which opensensor) service setup
+sudo $(which uvx) --from opensensor-enviroplus opensensor service setup
 ```
 
 ## Data Structure
@@ -408,9 +384,15 @@ station={STATION_ID}/year={year}/month={month}/day={day}/data_{time}.parquet
 ```
 
 **Example:**
-```
-s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=019ab390-f291-7a30-bca8-381286e4c2aa/year=2025/month=11/day=25/data_0415.parquet
-```
+
+- **Bucket**: `us-west-2.opendata.source.coop`
+- **Prefix**: `walkthru-earth/opensensor-space/enviroplus`
+- **Partitioning**:
+  - `station=019ab390-f291-7a30-bca8-381286e4c2aa`
+  - `year=2025`
+  - `month=11`
+  - `day=25`
+- **File**: `data_0415.parquet`
 
 ### Daily Aggregated Data
 
@@ -422,13 +404,34 @@ station={STATION_ID}/year={year}/month={month}/day={day}/data_{index}.parquet
 
 Manage your station with these commands:
 
+View current status:
 ```bash
-opensensor status          # View current status
-opensensor logs --follow   # Watch live logs
-opensensor sync            # Manual sync to cloud
-opensensor config          # View configuration
-opensensor service restart # Restart collector
-opensensor service stop    # Stop collector
+opensensor status
+```
+
+Watch live logs:
+```bash
+opensensor logs --follow
+```
+
+Manual sync to cloud:
+```bash
+opensensor sync
+```
+
+View configuration:
+```bash
+opensensor config
+```
+
+Restart collector:
+```bash
+opensensor service restart
+```
+
+Stop collector:
+```bash
+opensensor service stop
 ```
 
 ## Support
