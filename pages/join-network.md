@@ -8,13 +8,20 @@ opensensor.space is a community-driven sensor network. Deploy sensors, share ope
 ## How to Participate
 
 1. **Deploy your sensors** - Follow the setup instructions below
-2. **Choose your storage** - Use [Source Cooperative](https://source.coop) for open data or your own S3-compatible storage
+2. **Choose your storage** - This is the **only** 3rd party service required. You can use:
+    - **Cloud**: AWS S3, Google Cloud Storage, Azure Blob, Wasabi, Hetzner, etc.
+    - **Open Data**: [Source Cooperative](https://source.coop) (recommended for public data)
+    - **Local / Airgapped**: [MinIO](https://min.io) or [RustFS](https://github.com/rustfs/rustfs) for local edge networks
 3. **Register your station** - Use our registration form below
 4. **Share your insights** - Contribute dashboard improvements or new sensor implementations
 
 ## Register Your Station
 
-Ready to add your sensor station to the network? Use our registration form to submit your station details. You'll need a GitHub account to authenticate.
+Ready to add your sensor station to the network? Use our registration form to submit your station details.
+
+**Requirements:**
+1.  A **GitHub account** is required to authenticate and submit the registration.
+2.  Your **Object Storage Bucket** must be **publicly accessible** so the network can read your data.
 
 <a href="https://opensensor.space/admin/" target="_blank" rel="external" class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition-colors duration-200 no-underline">
   <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
