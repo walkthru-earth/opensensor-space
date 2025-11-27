@@ -361,7 +361,7 @@ FROM (
   WHERE station_id = '${params.station}'
     AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
     and (pm1 is not null or pm25 is not null or pm10 is not null)
-  GROUP BY date_trunc('hour', timestamp)
+  GROUP BY date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
 ) AS hourly_data
 WHERE hour >= (SELECT date_trunc('hour', min(timestamp)) + INTERVAL '23 hours' FROM all_stations WHERE station_id = '${params.station}')
 ORDER BY hour
