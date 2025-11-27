@@ -11,7 +11,7 @@ opensensor.space is a community-driven sensor network. Deploy sensors, share ope
 2. **Choose your storage** - This is the **only** 3rd party service required. You can use:
     - **Cloud**: AWS S3, Google Cloud Storage, Azure Blob, Wasabi, Hetzner, etc.
     - **Open Data**: [Source Cooperative](https://source.coop) (recommended for public data)
-    - **Local / Airgapped**: [MinIO](https://min.io) or [RustFS](https://github.com/rustfs/rustfs) for local edge networks
+    - **Local / Airgapped**: [MinIO](https://min.io), [Ceph](https://ceph.io), or [RustFS](https://github.com/rustfs/rustfs) for local edge networks
 3. **Register your station** - Use our registration form below
 4. **Share your insights** - Contribute dashboard improvements or new sensor implementations
 
