@@ -400,41 +400,16 @@ station={STATION_ID}/year={year}/month={month}/day={day}/data_{time}.parquet
 station={STATION_ID}/year={year}/month={month}/day={day}/data_{index}.parquet
 ```
 
-## CLI Commands
+## CLI Commands & Documentation
 
-Manage your station with these commands:
+For a full list of CLI commands, configuration options, and advanced usage, please refer to the official repositories:
 
-View current status:
-```bash
-opensensor status
-```
-
-Watch live logs:
-```bash
-opensensor logs --follow
-```
-
-Manual sync to cloud:
-```bash
-opensensor sync
-```
-
-View configuration:
-```bash
-opensensor config
-```
-
-Restart collector:
-```bash
-opensensor service restart
-```
-
-Stop collector:
-```bash
-opensensor service stop
-```
+- **[opensensor-enviroplus](https://github.com/walkthru-earth/opensensor-enviroplus)**: Documentation for the data collector, CLI, and service management.
+- **[enviroplus-community](https://github.com/walkthru-earth/enviroplus-python)**: Documentation for the sensor drivers and hardware setup.
 
 ## Support
+
+If you encounter issues or have questions, please check the issues pages on GitHub:
 
 - [opensensor-enviroplus Issues](https://github.com/walkthru-earth/opensensor-enviroplus/issues)
 - [enviroplus-community Issues](https://github.com/walkthru-earth/enviroplus-python/issues)
