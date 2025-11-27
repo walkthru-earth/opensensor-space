@@ -28,8 +28,8 @@ This dashboard analyzes gas sensor readings (Oxidised, Reducing, NH3) from **{st
 
 ```sql date_range_data
 select
-  (min(timestamp)) as min_date,
-  (max(timestamp)) as max_date
+  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as min_date,
+  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as max_date
 from all_stations
 where station_id = '${params.station}'
 ```
@@ -55,8 +55,7 @@ select
   nh3
 from all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 ```
 
 ```sql summary_stats
@@ -121,14 +120,13 @@ from ${main_data}
 ```sql hourly_patterns
 -- Calculate hourly patterns throughout the day
 SELECT
-  extract('hour' from timestamp) as hour_of_day,
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(oxidised), 1) as oxidised,
   round(avg(reducing), 1) as reducing,
   round(avg(nh3), 1) as nh3
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -287,26 +285,25 @@ Use the zoom control at the bottom to focus on specific time periods of interest
 ```sql gas_correlation
 -- Get data for the gas correlation scatter plots
 SELECT
-  date_trunc('hour', timestamp) as hour,
-  extract('hour' from timestamp) as hour_of_day,
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour,
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(oxidised), 1) as oxidised,
   round(avg(reducing), 1) as reducing,
   round(avg(nh3), 1) as nh3,
   -- Add time of day categories for better analysis
   CASE
-    WHEN extract('hour' from timestamp) >= 6 AND extract('hour' from timestamp) < 12 THEN 'Morning (6-12)'
-    WHEN extract('hour' from timestamp) >= 12 AND extract('hour' from timestamp) < 18 THEN 'Afternoon (12-18)'
-    WHEN extract('hour' from timestamp) >= 18 AND extract('hour' from timestamp) < 22 THEN 'Evening (18-22)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 6 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 12 THEN 'Morning (6-12)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 12 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 18 THEN 'Afternoon (12-18)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 18 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 22 THEN 'Evening (18-22)'
     ELSE 'Night (22-6)'
   END as time_of_day
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
 GROUP BY
-  date_trunc('hour', timestamp),
-  extract('hour' from timestamp)
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)),
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
 ORDER BY hour
 ```
 
@@ -363,14 +360,13 @@ Common patterns:
 ```sql daily_gas_for_calendar
 -- Get daily average gas sensor readings for the calendar heatmaps
 SELECT
-  date_trunc('day', timestamp)::date as day,
+  strftime(date_trunc('day', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as day,
   round(avg(oxidised), 1) as avg_oxidised,
   round(avg(reducing), 1) as avg_reducing,
   round(avg(nh3), 1) as avg_nh3
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
 GROUP BY day
 ORDER BY day

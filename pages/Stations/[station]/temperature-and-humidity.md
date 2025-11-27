@@ -22,8 +22,8 @@ This dashboard analyzes temperature and humidity data from **{station_info[0].st
 
 ```sql date_range_data
 select
-  (min(timestamp)) as min_date,
-  (max(timestamp)) as max_date
+  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as min_date,
+  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as max_date
 from all_stations
 where station_id = '${params.station}'
 ```
@@ -48,8 +48,7 @@ select
   humidity
 from all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 ```
 
 ```sql temp_summary
@@ -117,13 +116,12 @@ Values outside these ranges may affect comfort and potentially indoor air qualit
 ```sql hourly_patterns
 -- Calculate hourly patterns throughout the day with a stacked format for the series
 SELECT
-  extract('hour' from timestamp) as hour_of_day,
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(temperature), 1) as temperature,
   round(avg(humidity), 1) as humidity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -192,19 +190,18 @@ This chart shows the average temperature and humidity for each hour of the day, 
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
   SELECT
-    timestamp,
+    timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as timestamp,
     -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
     CASE
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30
-      THEN date_trunc('hour', timestamp)
-      ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
+      WHEN EXTRACT(MINUTE FROM timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 30
+      THEN date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
+      ELSE date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) + INTERVAL '30 minutes'
     END AS half_hour_timestamp,
     temperature,
     humidity
   FROM all_stations
   WHERE station_id = '${params.station}'
-    AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-    AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+    AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 )
 
 SELECT
@@ -259,24 +256,23 @@ ORDER BY half_hour_timestamp, metric_type
 ```sql temp_vs_humidity
 -- Get hourly temperature and humidity for the scatter plot
 SELECT
-  date_trunc('hour', timestamp) as hour,
-  extract('hour' from timestamp) as hour_of_day,
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour,
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(temperature), 1) as temperature,
   round(avg(humidity), 1) as humidity,
   -- Add time of day categories for better analysis
   CASE
-    WHEN extract('hour' from timestamp) >= 6 AND extract('hour' from timestamp) < 12 THEN 'Morning (6-12)'
-    WHEN extract('hour' from timestamp) >= 12 AND extract('hour' from timestamp) < 18 THEN 'Afternoon (12-18)'
-    WHEN extract('hour' from timestamp) >= 18 AND extract('hour' from timestamp) < 22 THEN 'Evening (18-22)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 6 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 12 THEN 'Morning (6-12)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 12 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 18 THEN 'Afternoon (12-18)'
+    WHEN extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) >= 18 AND extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 22 THEN 'Evening (18-22)'
     ELSE 'Night (22-6)'
   END as time_of_day
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 GROUP BY
-  date_trunc('hour', timestamp),
-  extract('hour' from timestamp)
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)),
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
 ORDER BY hour
 ```
 
@@ -323,13 +319,12 @@ Understanding this relationship helps optimize ventilation and climate control f
 ```sql daily_weather_for_calendar
 -- Get daily average temperature and humidity values for the calendar heatmaps
 SELECT
-  date_trunc('day', timestamp)::date as day,
+  strftime(date_trunc('day', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as day,
   round(avg(temperature), 1) as avg_temp,
   round(avg(humidity), 1) as avg_humidity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= '${inputs.date_filter.end}'::date + interval '1 day'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND (temperature IS NOT NULL OR humidity IS NOT NULL)
 GROUP BY day
 ORDER BY day

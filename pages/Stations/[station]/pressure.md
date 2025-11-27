@@ -22,8 +22,8 @@ This dashboard analyzes atmospheric pressure data from **{station_info[0].statio
 
 ```sql date_range_data
 select
-  (min(timestamp)) as min_date,
-  (max(timestamp)) as max_date
+  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as min_date,
+  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as max_date
 from all_stations
 where station_id = '${params.station}'
 ```
@@ -47,7 +47,7 @@ select
   pressure
 from all_stations
 where station_id = '${params.station}'
-  and timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 ```
 
 ```sql summary_stats
@@ -93,12 +93,11 @@ Changes in pressure can help forecast weather - falling pressure often indicates
 ```sql hourly_patterns
 -- Calculate hourly patterns throughout the day
 SELECT
-  extract('hour' from timestamp) as hour_of_day,
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(pressure), 1) as avg_pressure
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date >= '${inputs.date_filter.start}'::date + interval '1 day'
-  AND timestamp::date <= ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -148,12 +147,12 @@ The reference line at 1013.25 hPa shows standard sea level pressure.
 -- Format data for the time series chart (30-minute intervals)
 WITH time_buckets AS (
   SELECT
-    timestamp,
+    timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as timestamp,
     -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
     CASE
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30
-      THEN date_trunc('hour', timestamp)
-      ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
+      WHEN EXTRACT(MINUTE FROM timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 30
+      THEN date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
+      ELSE date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) + INTERVAL '30 minutes'
     END AS half_hour_timestamp,
     pressure
   FROM ${main_data}
@@ -224,11 +223,11 @@ Use the zoom control at the bottom to focus on specific time periods of interest
 ```sql daily_pressure_for_calendar
 -- Get daily average pressure values for the calendar heatmap
 SELECT
-  date_trunc('day', timestamp)::date as day,
+  strftime(date_trunc('day', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as day,
   round(avg(pressure), 1) as avg_pressure
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND pressure IS NOT NULL
 GROUP BY day
 ORDER BY day

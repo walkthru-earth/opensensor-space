@@ -22,8 +22,8 @@ This dashboard shows particulate matter measurements from **{station_info[0].sta
 
 ```sql date_range_data
 select
-  (min(timestamp)) as min_date,
-  (max(timestamp)) as max_date
+  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as min_date,
+  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as max_date
 from all_stations
 where station_id = '${params.station}'
 ```
@@ -49,7 +49,7 @@ select
   pm10
 from all_stations
 where station_id = '${params.station}'
-  and timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   and (pm1 is not null or pm25 is not null or pm10 is not null)
 ```
 
@@ -152,13 +152,13 @@ Lower values indicate better air quality. The air quality categories follow EPA 
 ```sql pm_hourly
 -- Get hourly PM data with adjusted date range
 select
-  date_trunc('hour', timestamp) as hour,
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour,
   round(avg(pm1), 1) as pm1,
   round(avg(pm25), 1) as pm25,
   round(avg(pm10), 1) as pm10
 from all_stations
 where station_id = '${params.station}'
-  and timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   and (pm1 is not null or pm25 is not null or pm10 is not null)
 group by 1
 order by 1
@@ -180,6 +180,54 @@ order by 1
           bottom: 50
       }
   }}
+>
+  <ReferenceArea yMin=0 yMax=12 color="positive" label="Good" opacity=0.1 labelPosition="right"/>
+  <ReferenceArea yMin=12 yMax=35.4 color="warning" label="Moderate" opacity=0.1 labelPosition="right"/>
+  <ReferenceArea yMin=35.4 yMax=55.4 color="negative" label="Unhealthy for SG" opacity=0.1 labelPosition="right"/>
+  <ReferenceArea yMin=55.4 yMax=150.4 color="red" label="Unhealthy" opacity=0.1 labelPosition="right"/>
+</LineChart>
+
+## PM2.5 Distribution
+
+<Histogram
+  data={main_data}
+  value=pm25
+  title="Frequency of PM2.5 Levels"
+  subtitle="Distribution of PM2.5 readings"
+  binCount=25
+  xAxisTitle="PM2.5 (μg/m³)"
+/>
+
+## Hourly Distribution Analysis
+
+```sql pm_hourly_distribution
+select
+  extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
+  min(pm25) as min,
+  quantile_cont(pm25, 0.25) as first_quartile,
+  median(pm25) as median,
+  quantile_cont(pm25, 0.75) as third_quartile,
+  max(pm25) as max
+from all_stations
+where station_id = '${params.station}'
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  and pm25 is not null
+group by 1
+order by 1
+```
+
+<BoxPlot
+  data={pm_hourly_distribution}
+  name=hour_of_day
+  min=min
+  intervalBottom=first_quartile
+  midpoint=median
+  intervalTop=third_quartile
+  max=max
+  title="Hourly PM2.5 Distribution"
+  subtitle="Box plot showing the spread of PM2.5 levels for each hour"
+  xAxisTitle="Hour of Day"
+  yAxisTitle="PM2.5 (μg/m³)"
 />
 
 ## Particle Count by Size
@@ -187,13 +235,13 @@ order by 1
 ```sql particle_counts
 -- Get hourly particle counts with adjusted date range
 SELECT
-  date_trunc('hour', timestamp) as hour,
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour,
   round(avg(particles_03um)) as "0.3μm",
   round(avg(particles_05um)) as "0.5μm",
   round(avg(particles_10um)) as "1.0μm"
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   and (particles_03um is not null or particles_05um is not null or particles_10um is not null)
 GROUP BY 1
 ORDER BY 1
@@ -220,13 +268,13 @@ ORDER BY 1
 ```sql large_particle_counts
 -- Get hourly large particle counts with adjusted date range
 SELECT
-  date_trunc('hour', timestamp) as hour,
+  date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour,
   round(avg(particles_25um)) as "2.5μm",
   round(avg(particles_50um)) as "5.0μm",
   round(avg(particles_100um)) as "10.0μm"
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   and (particles_25um is not null or particles_50um is not null or particles_100um is not null)
 GROUP BY 1
 ORDER BY 1
@@ -255,13 +303,13 @@ ORDER BY 1
 ```sql daily_pm
 -- Daily average PM data with adjusted date range
 select
-  date_trunc('day', timestamp) as day,
+  date_trunc('day', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as day,
   round(avg(pm1), 1) as pm1,
   round(avg(pm25), 1) as pm25,
   round(avg(pm10), 1) as pm10
 from all_stations
 where station_id = '${params.station}'
-  and timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   and (pm1 is not null or pm25 is not null or pm10 is not null)
 group by 1
 order by 1
@@ -305,13 +353,13 @@ SELECT
   ), 1) as pm10_24hr_mean
 FROM (
   SELECT
-    date_trunc('hour', timestamp) as timestamp,
+    date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as timestamp,
     avg(pm1) as pm1,
     avg(pm25) as pm25,
     avg(pm10) as pm10
   FROM all_stations
   WHERE station_id = '${params.station}'
-    AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+    AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
     and (pm1 is not null or pm25 is not null or pm10 is not null)
   GROUP BY date_trunc('hour', timestamp)
 ) AS hourly_data
@@ -348,13 +396,13 @@ ORDER BY hour
 ```sql hourly_pattern
 -- Calculate average PM levels by hour of day
 SELECT
-  date_part('hour', timestamp) as hour_of_day,
+  date_part('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as hour_of_day,
   round(avg(pm1), 1) as avg_pm1,
   round(avg(pm25), 1) as avg_pm25,
   round(avg(pm10), 1) as avg_pm10
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND (pm1 IS NOT NULL OR pm25 IS NOT NULL OR pm10 IS NOT NULL)
 GROUP BY hour_of_day
 ORDER BY hour_of_day
@@ -413,13 +461,13 @@ The World Health Organization (WHO) guidelines for 24-hour mean concentrations:
 ```sql pm_daily_for_calendar
 -- Get daily average PM values for the calendar heatmaps
 SELECT
-  date_trunc('day', timestamp)::date as day,
+  strftime(date_trunc('day', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as day,
   round(avg(pm1), 1) as avg_pm1,
   round(avg(pm25), 1) as avg_pm25,
   round(avg(pm10), 1) as avg_pm10
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timestamp::date between '${inputs.date_filter.start}'::date + interval '1 day' and ('${inputs.date_filter.end}'::date + INTERVAL '1 day')
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
   AND (pm1 IS NOT NULL OR pm25 IS NOT NULL OR pm10 IS NOT NULL)
 GROUP BY day
 ORDER BY day
