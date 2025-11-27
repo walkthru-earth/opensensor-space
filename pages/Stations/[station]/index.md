@@ -11,17 +11,27 @@ SELECT * FROM station_registry WHERE station_id = '${params.station}'
 
 <LastRefreshed/>
 
-<Details title='Station Information'>
 
-| Property | Value |
-|----------|-------|
-| **Station ID** | {station_info[0].station_id} |
-| **Sensor Type** | {station_info[0].sensor_type} |
-| **Environment** | {station_info[0].station_type} |
-| **Location** | {station_info[0].latitude}, {station_info[0].longitude} |
-| **Storage URL** | {station_info[0].storage_url} |
 
-</Details>
+```sql station_metadata
+SELECT 'Station ID' as Property, station_id as Value FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Sensor Type', sensor_type FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Environment', station_type FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Storage URL', storage_url FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Description', description FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Contributor', '[' || contributor_name || '](' || contributor_url || ')' FROM station_registry WHERE station_id = '${params.station}'
+UNION ALL
+SELECT 'Submitted At', strftime(submitted_at, '%Y-%m-%d') FROM station_registry WHERE station_id = '${params.station}'
+```
+
+<DataTable data={station_metadata} rows=all search=false />
+
+
 
 ## Quick Access
 
@@ -92,7 +102,9 @@ SELECT * FROM station_registry WHERE station_id = '${params.station}'
 SELECT
   station_name,
   latitude,
-  longitude
+  longitude,
+  sensor_type as "Sensor Type",
+  station_type as Environment
 FROM station_registry
 WHERE station_id = '${params.station}'
 ```
@@ -103,5 +115,9 @@ WHERE station_id = '${params.station}'
     long=longitude
     pointName=station_name
     height=300
-    startingZoom=10
+    startingZoom=13
+    tooltip={[
+        {id: 'Sensor Type'},
+        {id: 'Environment'}
+    ]}
 />
