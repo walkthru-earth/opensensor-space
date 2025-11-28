@@ -341,7 +341,7 @@ Install the sensor drivers and configure the hardware interfaces (I2C, SPI, UART
 
 Install dependencies and configure hardware:
 ```bash
-sudo $(which uvx) --from enviroplus-community enviroplus-setup --install
+sudo $(which uvx) --from opensensor-enviroplus enviroplus-setup --install
 ```
 
 Reboot to apply hardware changes:
@@ -371,6 +371,34 @@ sudo $(which uvx) --from opensensor-enviroplus opensensor start
 ```
 
 Watch the output for ~15 minutes until you see a successful sync. Press `Ctrl+C` to stop when verified.
+
+<Details title="Troubleshooting: Verify Particulate Sensor">
+
+If you need to verify if the specific particulate sensor is working, run the following command:
+
+```bash
+sudo $(which uvx) --from opensensor-enviroplus python -m enviroplus.examples.particulates
+```
+
+You should see output similar to this:
+
+```bash
+2025-11-28 03:17:17.692 INFO     
+PM1.0 ug/m3 (ultrafine particles):                             11
+PM2.5 ug/m3 (combustion particles, organic compounds, metals): 15
+PM10 ug/m3  (dust, pollen, mould spores):                      17
+PM1.0 ug/m3 (atmos env):                                       11
+PM2.5 ug/m3 (atmos env):                                       15
+PM10 ug/m3 (atmos env):                                        17
+>0.3um in 0.1L air:                                            2037
+>0.5um in 0.1L air:                                            557
+>1.0um in 0.1L air:                                            94
+>2.5um in 0.1L air:                                            6
+>5.0um in 0.1L air:                                            4
+>10um in 0.1L air:                                             1
+```
+
+</Details>
 
 ### Step 6: Enable as Service
 
