@@ -306,7 +306,7 @@ The storage device is ejected automatically. You can now safely remove the SD ca
 
 <Image url="/tutorial/os/15-raspberry-pi-imager-complete.png" description="Write complete - SD card is ready to use" />
 
-<Alert status="success">
+<Alert status="positive">
   <strong>Next step:</strong> Insert the SD card into your Raspberry Pi, connect power, and wait 2-4 minutes for first boot. Then proceed to Software Installation below.
 </Alert>
 
@@ -361,40 +361,37 @@ After rebooting, SSH back into your Pi and run these commands to verify, configu
 
 ---
 
+<script>
+  const highLevelArchitecture = `
+graph LR
+    subgraph User ["Your Contribution"]
+        You["Your Station"] -->|Sync| YourBucket["Your Storage - AWS/GCS/R2"]
+    end
+
+    subgraph Network ["The Network"]
+        Other1["Station A"] -->|Sync| Bucket1["Source.coop"]
+        Other2["Station B"] -->|Sync| Bucket2["MinIO/Wasabi"]
+    end
+
+    YourBucket -.->|Public Access| Dashboard
+    Bucket1 -.->|Public Access| Dashboard
+    Bucket2 -.->|Public Access| Dashboard
+
+    subgraph OS ["opensensor.space"]
+        Dashboard["Unified Dashboard - Browser + DuckDB"]
+    end
+
+    style You fill:#e1f5ff,stroke:#0077cc,stroke-width:2px
+    style YourBucket fill:#fff5e1,stroke:#dcb20a,stroke-width:2px
+    style Dashboard fill:#e1ffe1,stroke:#00cc44,stroke-width:2px
+`;
+</script>
+
 ## System Architecture
 
-OpenSensor-Enviroplus is designed to be simple, robust, and cloud-native. It collects environmental data and syncs it directly to cloud storage without needing complex infrastructure.
+<Mermaid chart={highLevelArchitecture} />
 
-### Key Components
-
-*   **Edge Device**: Your Raspberry Pi collects data from sensors (BME280, PMS5003, etc.) every 5 seconds.
-*   **Data Collector**: A Python application using Polars for fast data processing. It buffers readings in memory.
-*   **Local Storage**: Every 15 minutes, buffered data is written to local Parquet files.
-*   **Cloud Sync**: These files are automatically synced to your S3-compatible storage (AWS S3, Source.coop, etc.).
-*   **Analytics**: Data in the cloud is queried directly using DuckDB or visualized in dashboards.
-
-### Data Flow
-
-1.  **Collect**: Sensors are read every 5 seconds.
-2.  **Batch**: Readings are accumulated for 15 minutes (approx. 180 readings).
-3.  **Write**: Data is saved as Hive-partitioned Parquet files (e.g., `station=ID/year=2025/month=11/day=28/data_1200.parquet`).
-4.  **Sync**: New files are uploaded to the cloud.
-5.  **Analyze**: You can query your data immediately using SQL.
-
-### Storage Structure
-
-Your data is organized using **Hive Partitioning**, which makes querying efficient and cost-effective.
-
-```
-output/
-└── station={UUID}/
-    └── year={YYYY}/
-        └── month={MM}/
-            └── day={DD}/
-                ├── data_0900.parquet  (15-min batch)
-                ├── data_0915.parquet
-                └── ...
-```
+For a detailed overview of how the system works, check out the [System Architecture](/architecture) page.
 
 ### Configuration
 

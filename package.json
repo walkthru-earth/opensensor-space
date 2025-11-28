@@ -25,6 +25,7 @@
     "@evidence-dev/sqlite": "^2.0.8",
     "@evidence-dev/tailwind": "^3.1.2",
     "caniuse-lite": "^1.0.30001756",
+    "mermaid": "^11.12.1",
     "posthog-js": "^1.297.2"
   },
   "overrides": {

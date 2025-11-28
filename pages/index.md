@@ -188,7 +188,7 @@ Sensors operate autonomously even when offline - zero data loss during network o
 - **Multi-cloud support** - ✅ Completed (AWS, GCS, Azure, Cloudflare R2, Wasabi, Hetzner, MinIO)
 - **Stations health** - ✅ Completed (CPU, Memory, Disk, WiFi, NTP monitoring)
 
-<Alert status="success">
+<Alert status="positive">
   <strong>Ready to deploy your sensors?</strong> Check out the <a href="/join-network">Join the Sensor Network</a> page for instructions on how to contribute to this project!
 </Alert>
 
