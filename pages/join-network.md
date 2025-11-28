@@ -312,140 +312,119 @@ The storage device is ejected automatically. You can now safely remove the SD ca
 
 ## 3. Software Installation
 
-SSH into your Raspberry Pi to begin the installation:
-```bash
-ssh <username>@<ip_address>
-```
+We've simplified the installation process to a single command that handles everything: system dependencies, Python environment, and sensor configuration.
 
-### Step 1: Update System and Install Git
+### One-Line Install (Recommended)
 
-Ensure your system is up to date and has git installed.
+Run this command on your Raspberry Pi:
 
 ```bash
-sudo apt-get update
-sudo apt-get install python3-dev git -y
+curl -LsSf https://raw.githubusercontent.com/walkthru-earth/opensensor-enviroplus/main/install.sh | sudo bash
 ```
 
-### Step 2: Install UV Package Manager
+This script will:
+1.  Install system dependencies (git, python3-dev, etc.)
+2.  Install `uv` (fast Python package manager)
+3.  Install `opensensor-enviroplus`
+4.  Configure hardware permissions
 
-We use `uv` for fast, reliable Python package management.
+**After the installation completes, reboot your Raspberry Pi:**
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-source $HOME/.local/bin/env
-```
-
-### Step 3: Configure Hardware
-
-Install the sensor drivers and configure the hardware interfaces (I2C, SPI, UART).
-
-Install dependencies and configure hardware:
-```bash
-sudo $(which uvx) --from opensensor-enviroplus enviroplus-setup --install
-```
-
-Reboot to apply hardware changes:
 ```bash
 sudo reboot
 ```
 
-### Step 4: Configure Your Station
+### Post-Installation Setup
 
-After rebooting, SSH back in and run the setup wizard. This will generate your unique Station ID and configure your S3 credentials.
+After rebooting, SSH back into your Pi and run these commands to verify, configure, and start your station:
 
-```bash
-uvx --from opensensor-enviroplus opensensor setup
-```
+1.  **Test Sensors**: First, verify that your sensors are reading data correctly.
+    ```bash
+    opensensor test
+    ```
 
-<Alert status="warning">
-  <strong>S3 Credentials:</strong> You will need your S3 Access Key ID and Secret Access Key ready. If using Source Cooperative, create an account and generate keys there.
-</Alert>
+2.  **Configure Station**: Set up your station ID and storage credentials.
+    ```bash
+    cd ~/opensensor
+    opensensor setup
+    ```
 
-### Step 5: Test and Verify
+3.  **Enable Service**: Install the systemd service to start data collection automatically on boot.
+    ```bash
+    opensensor service setup
+    ```
 
-Start the collector manually to verify everything is working.
+4.  **Verify Operation**: Check the logs to ensure the service is running and syncing.
+    ```bash
+    opensensor service logs -f
+    ```
 
-Start collector in foreground:
-```bash
-sudo $(which uvx) --from opensensor-enviroplus opensensor start
-```
+---
 
-Watch the output for ~15 minutes until you see a successful sync. Press `Ctrl+C` to stop when verified.
+## System Architecture
 
-<Details title="Troubleshooting: Verify Particulate Sensor">
+OpenSensor-Enviroplus is designed to be simple, robust, and cloud-native. It collects environmental data and syncs it directly to cloud storage without needing complex infrastructure.
 
-If you need to verify if the specific particulate sensor is working, run the following command:
+### Key Components
 
-```bash
-sudo $(which uvx) --from opensensor-enviroplus python -m enviroplus.examples.particulates
-```
+*   **Edge Device**: Your Raspberry Pi collects data from sensors (BME280, PMS5003, etc.) every 5 seconds.
+*   **Data Collector**: A Python application using Polars for fast data processing. It buffers readings in memory.
+*   **Local Storage**: Every 15 minutes, buffered data is written to local Parquet files.
+*   **Cloud Sync**: These files are automatically synced to your S3-compatible storage (AWS S3, Source.coop, etc.).
+*   **Analytics**: Data in the cloud is queried directly using DuckDB or visualized in dashboards.
 
-You should see output similar to this:
+### Data Flow
 
-```bash
-2025-11-28 03:17:17.692 INFO     
-PM1.0 ug/m3 (ultrafine particles):                             11
-PM2.5 ug/m3 (combustion particles, organic compounds, metals): 15
-PM10 ug/m3  (dust, pollen, mould spores):                      17
-PM1.0 ug/m3 (atmos env):                                       11
-PM2.5 ug/m3 (atmos env):                                       15
-PM10 ug/m3 (atmos env):                                        17
->0.3um in 0.1L air:                                            2037
->0.5um in 0.1L air:                                            557
->1.0um in 0.1L air:                                            94
->2.5um in 0.1L air:                                            6
->5.0um in 0.1L air:                                            4
->10um in 0.1L air:                                             1
-```
+1.  **Collect**: Sensors are read every 5 seconds.
+2.  **Batch**: Readings are accumulated for 15 minutes (approx. 180 readings).
+3.  **Write**: Data is saved as Hive-partitioned Parquet files (e.g., `station=ID/year=2025/month=11/day=28/data_1200.parquet`).
+4.  **Sync**: New files are uploaded to the cloud.
+5.  **Analyze**: You can query your data immediately using SQL.
 
-</Details>
+### Storage Structure
 
-### Step 6: Enable as Service
-
-Install the systemd service so the collector starts automatically on boot.
-
-```bash
-sudo $(which uvx) --from opensensor-enviroplus opensensor service setup
-```
-
-## Data Structure
-
-Your station will now upload data in the following Hive-partitioned format:
-
-### Near Real-Time Data (15-minute files)
+Your data is organized using **Hive Partitioning**, which makes querying efficient and cost-effective.
 
 ```
-station={STATION_ID}/year={year}/month={month}/day={day}/data_{time}.parquet
+output/
+└── station={UUID}/
+    └── year={YYYY}/
+        └── month={MM}/
+            └── day={DD}/
+                ├── data_0900.parquet  (15-min batch)
+                ├── data_0915.parquet
+                └── ...
 ```
 
-**Example:**
+### Configuration
 
-- **Bucket**: `us-west-2.opendata.source.coop`
-- **Prefix**: `walkthru-earth/opensensor-space/enviroplus`
-- **Partitioning**:
-  - `station=019ab390-f291-7a30-bca8-381286e4c2aa`
-  - `year=2025`
-  - `month=11`
-  - `day=25`
-- **File**: `data_0415.parquet`
+Configuration is managed via a `.env` file in your `~/opensensor` directory. Key settings include:
 
-### Daily Aggregated Data
+*   `OPENSENSOR_STATION_ID`: Your unique station UUID.
+*   `OPENSENSOR_READ_INTERVAL`: How often to read sensors (default: 5s).
+*   `OPENSENSOR_BATCH_DURATION`: How often to save files (default: 900s / 15m).
+*   `OPENSENSOR_SYNC_ENABLED`: Enable/disable cloud sync.
+*   `OPENSENSOR_STORAGE_BUCKET`: Your cloud storage bucket name.
 
-```
-station={STATION_ID}/year={year}/month={month}/day={day}/data_{index}.parquet
-```
+### Health Monitoring
+
+The system optionally collects health metrics to help you monitor your station remotely. This includes:
+*   CPU temperature and load
+*   Memory and disk usage
+*   WiFi signal strength
+*   NTP clock synchronization status
+
+These metrics are stored in a separate `output-health/` directory with the same structure as your sensor data.
 
 ## CLI Commands & Documentation
 
-For a full list of CLI commands, configuration options, and advanced usage, please refer to the official repositories:
+For a full list of CLI commands, configuration options, and advanced usage, please refer to the official repository:
 
 - **[opensensor-enviroplus](https://github.com/walkthru-earth/opensensor-enviroplus)**: Documentation for the data collector, CLI, and service management.
-- **[enviroplus-community](https://github.com/walkthru-earth/enviroplus-python)**: Documentation for the sensor drivers and hardware setup.
 
 ## Support
 
-If you encounter issues or have questions, please check the issues pages on GitHub:
+If you encounter issues or have questions, please check the issues page on GitHub:
 
 - [opensensor-enviroplus Issues](https://github.com/walkthru-earth/opensensor-enviroplus/issues)
-- [enviroplus-community Issues](https://github.com/walkthru-earth/enviroplus-python/issues)
 - Email: hi@walkthru.earth

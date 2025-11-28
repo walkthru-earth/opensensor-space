@@ -168,7 +168,6 @@ Our data is hosted on [Source Cooperative](https://source.coop) - free S3-compat
 Reference deployment using Enviro+ sensor: temperature, pressure, humidity, gas sensors, light, proximity, and particulate matter (PM1.0, PM2.5, PM10).
 
 - [Enviro+ Product Page](https://shop.pimoroni.com/products/enviro?variant=31155658457171)
-- [enviroplus-community Library](https://github.com/walkthru-earth/enviroplus-python)
 
 ## Platform Benefits
 
@@ -185,7 +184,9 @@ Sensors operate autonomously even when offline - zero data loss during network o
 
 - **GPS-enabled sensors** - Location tracking for mobile sensor networks
 - **Multi-sensor support** - LoRa, radio (AIS), industrial sensors, agricultural IoT, smart city applications
-- **One-line setup** - Simple shell script for instant edge device configuration
+- **One-line setup** - ✅ Completed (see [Join the Network](/join-network))
+- **Multi-cloud support** - ✅ Completed (AWS, GCS, Azure, Cloudflare R2, Wasabi, Hetzner, MinIO)
+- **Stations health** - ✅ Completed (CPU, Memory, Disk, WiFi, NTP monitoring)
 
 <Alert status="success">
   <strong>Ready to deploy your sensors?</strong> Check out the <a href="/join-network">Join the Sensor Network</a> page for instructions on how to contribute to this project!
@@ -194,7 +195,6 @@ Sensors operate autonomously even when offline - zero data loss during network o
 ## Resources
 
 - [opensensor-enviroplus](https://github.com/walkthru-earth/opensensor-enviroplus) - Data collector CLI
-- [enviroplus-community](https://github.com/walkthru-earth/enviroplus-python) - Sensor drivers
 - [Data Repository](https://source.coop/walkthru-earth/opensensor-space/)
 
 ---
