@@ -466,6 +466,16 @@ The system optionally collects health metrics to help you monitor your station r
 
 These metrics are stored in a separate `output-health/` directory with the same structure as your sensor data.
 
+## Maintenance
+
+### Updating the Software
+
+To upgrade to the latest version of the `opensensor-enviroplus` package, run the following command. This will update the tool and restart the service to apply changes:
+
+```bash
+uv tool upgrade opensensor-enviroplus && opensensor service restart
+```
+
 ## CLI Commands & Documentation
 
 For a full list of CLI commands, configuration options, and advanced usage, please refer to the official repository:

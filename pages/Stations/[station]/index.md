@@ -94,6 +94,15 @@ SELECT 'Submitted At', strftime(submitted_at, '%Y-%m-%d') FROM station_registry 
             </div>
         </a>
     </div>
+
+    <div class="border rounded-lg p-4 my-2 mx-1 hover:shadow-md transition bg-slate-50 dark:bg-slate-900/30">
+        <a href="/Stations/{params.station}/health" class="flex items-center justify-between">
+            <div>
+                <h3 class="font-bold">System Health</h3>
+                <p class="text-xs mt-1">CPU, memory, disk, and network status</p>
+            </div>
+        </a>
+    </div>
 </Grid>
 
 ## Station Location

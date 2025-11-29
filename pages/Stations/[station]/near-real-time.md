@@ -256,3 +256,31 @@ ORDER BY minute
 **Gas Sensors:** Lower resistance (kΩ) = higher concentration. Oxidised measures NO2/O3, Reducing measures CO/VOCs, NH3 measures ammonia.
 
 </Details>
+
+## Station Location
+
+```sql station_location
+SELECT
+  station_name,
+  latitude,
+  longitude,
+  sensor_type as "Sensor Type",
+  station_type as Environment,
+  description as Description
+FROM station_registry
+WHERE station_id = '${params.station}'
+```
+
+<PointMap
+    data={station_location}
+    lat=latitude
+    long=longitude
+    pointName=station_name
+    height=300
+    startingZoom=13
+    tooltip={[
+        {id: 'Sensor Type'},
+        {id: 'Environment'},
+        {id: 'Description'}
+    ]}
+/>
