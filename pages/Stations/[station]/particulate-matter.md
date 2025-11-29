@@ -22,8 +22,8 @@ This dashboard shows particulate matter measurements from **{station_info[0].sta
 
 ```sql date_range_data
 select
-  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as min_date,
-  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)), '%Y-%m-%d') as max_date
+  strftime(min(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))::TIMESTAMP, '%Y-%m-%d') as min_date,
+  strftime(max(timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))::TIMESTAMP, '%Y-%m-%d') as max_date
 from all_stations
 where station_id = '${params.station}'
 ```

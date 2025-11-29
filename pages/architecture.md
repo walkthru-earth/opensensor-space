@@ -198,7 +198,7 @@ flowchart LR
 
 Your data is organized using **Hive Partitioning**, which makes querying efficient and cost-effective.
 
-```text
+```bash
 output/
 └── station={UUID}/
     └── year={YYYY}/
