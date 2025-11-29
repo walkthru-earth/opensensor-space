@@ -312,6 +312,59 @@ The storage device is ejected automatically. You can now safely remove the SD ca
 
 ## 3. Software Installation
 
+SSH into your Raspberry Pi to begin the installation.
+
+<Tabs>
+  <Tab label="macOS / Linux">
+
+  Open your **Terminal** application.
+
+  Run the following command (using your configured hostname):
+
+  ```bash
+  ssh <username>@opensensor01.local
+  ```
+
+  If the hostname doesn't work, use the IP address:
+
+  ```bash
+  ssh <username>@<ip_address>
+  ```
+
+  </Tab>
+  <Tab label="Windows">
+
+  Open **PowerShell** (press Start, type "PowerShell", and hit Enter).
+
+  Run the following command:
+
+  ```powershell
+  ssh <username>@opensensor01.local
+  ```
+
+  If the hostname doesn't work, use the IP address:
+
+  ```powershell
+  ssh <username>@<ip_address>
+  ```
+
+  </Tab>
+</Tabs>
+
+<Details title="How to find your Raspberry Pi's IP address">
+
+If you can't connect using the hostname, you'll need to find the IP address assigned by your router. Your computer/phone must be on the **same network** as the Pi.
+
+**Methods:**
+
+1.  **Network Scanner App (Easiest)**: Download an app like **Fing** (iOS/Android) on your phone. Scan the network and look for a device named "Raspberry Pi" or your custom hostname.
+2.  **Router Admin Page**: Log in to your router (usually `192.168.1.1` or `192.168.0.1`) and look for the list of "Connected Devices" or "DHCP Clients".
+3.  **Ping Command**: Sometimes the ping command can find the IP even if SSH fails.
+    *   **Mac/Linux**: `ping -c 1 opensensor01.local`
+    *   **Windows**: `ping -n 1 opensensor01.local`
+
+</Details>
+
 We've simplified the installation process to a single command that handles everything: system dependencies, Python environment, and sensor configuration.
 
 ### One-Line Install (Recommended)
