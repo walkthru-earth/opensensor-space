@@ -1,6 +1,5 @@
--- Station registry - reads from CSV for easier community contributions
--- New stations are added via Sveltia CMS → GitHub PR workflow
--- CSV path is relative to project root when running `bun run sources`
+-- Station registry - reads from CSV
+-- CSV is synced from YAML files on contributions branch during deploy
 SELECT
     station_id,
     station_name,
