@@ -184,7 +184,7 @@ order by 1
   <ReferenceArea yMin=0 yMax=12 color="positive" label="Good" opacity=0.1 labelPosition="right"/>
   <ReferenceArea yMin=12 yMax=35.4 color="warning" label="Moderate" opacity=0.1 labelPosition="right"/>
   <ReferenceArea yMin=35.4 yMax=55.4 color="negative" label="Unhealthy for SG" opacity=0.1 labelPosition="right"/>
-  <ReferenceArea yMin=55.4 yMax=150.4 color="red" label="Unhealthy" opacity=0.1 labelPosition="right"/>
+  <ReferenceArea yMin=55.4 yMax=150.4 color="negative" label="Unhealthy" opacity=0.15 labelPosition="right"/>
 </LineChart>
 
 ## PM2.5 Distribution
