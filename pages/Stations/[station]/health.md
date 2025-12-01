@@ -51,8 +51,10 @@ SELECT
 FROM ${raw_data}
 ```
 
+{#if raw_data.length > 0}
+
 <Alert status="info">
-  Last reading: <strong>{latest_health[0].last_reading_time}</strong> | Uptime: <strong><Value data={latest_health} value=uptime_hours fmt="num1"/> hours</strong>
+  Last reading: <strong>{latest_health[0].last_reading_time}</strong> | Uptime: <strong><Value data={latest_health} column=uptime_hours fmt="num1"/> hours</strong>
 </Alert>
 
 ## System Status
@@ -66,6 +68,8 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="Max recommended: 80°C"
+    emptySet="pass"
+    emptyMessage="No data"
   />
   <BigValue
     data={raw_data}
@@ -75,6 +79,8 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="System load average"
+    emptySet="pass"
+    emptyMessage="No data"
   />
   <BigValue
     data={raw_data}
@@ -84,6 +90,8 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="RAM utilization"
+    emptySet="pass"
+    emptyMessage="No data"
   />
   <BigValue
     data={raw_data}
@@ -93,6 +101,8 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="Storage utilization"
+    emptySet="pass"
+    emptyMessage="No data"
   />
   <BigValue
     data={raw_data}
@@ -102,6 +112,8 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="Available storage"
+    emptySet="pass"
+    emptyMessage="No data"
   />
 </Grid>
 
@@ -116,8 +128,9 @@ FROM ${raw_data}
     sparkline=timestamp
     sparklineType=area
     description="Closer to 0 is better"
+    emptySet="pass"
+    emptyMessage="No data"
   />
-  <!-- Add more network metrics if available or relevant -->
 </Grid>
 
 ## Performance Trends
@@ -140,6 +153,8 @@ ORDER BY minute
   title="Thermals & Memory"
   xFmt="HH:mm"
   chartAreaHeight=200
+  emptySet="pass"
+  emptyMessage="No data available"
 />
 
 <LineChart
@@ -149,4 +164,14 @@ ORDER BY minute
   title="System Load"
   xFmt="HH:mm"
   chartAreaHeight=200
+  emptySet="pass"
+  emptyMessage="No data available"
 />
+
+{:else}
+
+<Alert status="warning">
+  No health data available for this station in the current time window. Data updates every 15 minutes.
+</Alert>
+
+{/if}

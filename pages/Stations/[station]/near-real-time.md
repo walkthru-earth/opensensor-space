@@ -75,6 +75,8 @@ GROUP BY 1
 ORDER BY minute
 ```
 
+{#if raw_data.length > 0}
+
 <Alert status="info">
   Last reading: <strong>{station_data[0].last_reading_time}</strong>
 </Alert>
@@ -91,6 +93,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Optimal indoor: 20-25°C"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -100,6 +104,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Optimal indoor: 40-50%"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -109,12 +115,14 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Standard: 1013.25 hPa"
+      emptySet="pass"
+      emptyMessage="No data"
     />
   </Grid>
 
   <Grid cols=2>
-    <BigValue data={station_data} value=min_temp title="Min Temp (°C)" fmt="num1" />
-    <BigValue data={station_data} value=max_temp title="Max Temp (°C)" fmt="num1" />
+    <BigValue data={station_data} value=min_temp title="Min Temp (°C)" fmt="num1" emptySet="pass" emptyMessage="No data" />
+    <BigValue data={station_data} value=max_temp title="Max Temp (°C)" fmt="num1" emptySet="pass" emptyMessage="No data" />
   </Grid>
 
   <LineChart
@@ -124,6 +132,8 @@ ORDER BY minute
     title="Temperature & Humidity (1-min avg)"
     xFmt="HH:mm"
     chartAreaHeight=200
+    emptySet="pass"
+    emptyMessage="No data available"
   />
 
   </Tab>
@@ -139,6 +149,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="WHO guideline: under 15 μg/m³"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -148,6 +160,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="WHO guideline: under 45 μg/m³"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -157,6 +171,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Ultrafine particles"
+      emptySet="pass"
+      emptyMessage="No data"
     />
   </Grid>
 
@@ -167,6 +183,8 @@ ORDER BY minute
     title="Particulate Matter (1-min avg)"
     xFmt="HH:mm"
     chartAreaHeight=200
+    emptySet="pass"
+    emptyMessage="No data available"
   />
 
   </Tab>
@@ -182,6 +200,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="NO2, O3 - Lower = higher"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -191,6 +211,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="CO, VOCs - Lower = higher"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -200,6 +222,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="NH3 - Lower = higher"
+      emptySet="pass"
+      emptyMessage="No data"
     />
   </Grid>
 
@@ -210,6 +234,8 @@ ORDER BY minute
     title="Gas Sensors (1-min avg)"
     xFmt="HH:mm"
     chartAreaHeight=200
+    emptySet="pass"
+    emptyMessage="No data available"
   />
 
   </Tab>
@@ -225,6 +251,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Office: 300-500 lux"
+      emptySet="pass"
+      emptyMessage="No data"
     />
     <BigValue
       data={raw_data}
@@ -234,6 +262,8 @@ ORDER BY minute
       sparkline=timestamp
       sparklineType=area
       description="Lower = closer objects"
+      emptySet="pass"
+      emptyMessage="No data"
     />
   </Grid>
 
@@ -244,6 +274,8 @@ ORDER BY minute
     title="Light & Proximity (1-min avg)"
     xFmt="HH:mm"
     chartAreaHeight=200
+    emptySet="pass"
+    emptyMessage="No data available"
   />
 
   </Tab>
@@ -256,6 +288,14 @@ ORDER BY minute
 **Gas Sensors:** Lower resistance (kΩ) = higher concentration. Oxidised measures NO2/O3, Reducing measures CO/VOCs, NH3 measures ammonia.
 
 </Details>
+
+{:else}
+
+<Alert status="warning">
+  No sensor data available for this station in the current time window. Data updates every 15 minutes.
+</Alert>
+
+{/if}
 
 ## Station Location
 
