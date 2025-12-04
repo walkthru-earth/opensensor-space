@@ -34,7 +34,10 @@ SELECT
   uptime_seconds,
   clock_synced,
   cpu_voltage_v,
-  throttled_hex
+  throttled_hex,
+  -- Estimated power consumption (W) for Raspberry Pi
+  -- Base: 0.8W idle + load factor + temp factor
+  round(0.8 + (cpu_load_1min * 1.2) + ((cpu_temp_c - 35) * 0.02), 2) as est_power_w
 FROM read_parquet('https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus-health/station=${params.station}/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, "0")}/day=${String(new Date().getUTCDate()).padStart(2, "0")}/health_${String(new Date().getUTCHours()).padStart(2, "0")}${String((m => m < 15 ? 0 : Math.floor(m / 15) * 15)(new Date().getUTCMinutes())).padStart(2, "0")}.parquet')
 ORDER BY timestamp
 ```
@@ -47,7 +50,9 @@ SELECT
   round(avg(memory_percent_used), 1) as avg_memory,
   round(avg(disk_percent_used), 1) as avg_disk,
   round(avg(wifi_signal_dbm), 0) as avg_wifi,
-  max(uptime_seconds) / 3600.0 as uptime_hours
+  max(uptime_seconds) / 3600.0 as uptime_hours,
+  round(avg(est_power_w), 2) as avg_power_w,
+  round(avg(cpu_voltage_v), 3) as avg_voltage
 FROM ${raw_data}
 ```
 
@@ -133,6 +138,42 @@ FROM ${raw_data}
   />
 </Grid>
 
+## Power & Voltage
+
+<Grid cols=3>
+  <BigValue
+    data={raw_data}
+    value=est_power_w
+    title="Est. Power (W)"
+    fmt="num2"
+    sparkline=timestamp
+    sparklineType=area
+    description="Estimated consumption"
+    emptySet="pass"
+    emptyMessage="No data"
+  />
+  <BigValue
+    data={raw_data}
+    value=cpu_voltage_v
+    title="CPU Voltage (V)"
+    fmt="num3"
+    sparkline=timestamp
+    sparklineType=area
+    description="Core voltage"
+    emptySet="pass"
+    emptyMessage="No data"
+  />
+  <BigValue
+    data={latest_health}
+    value=avg_power_w
+    title="Avg Power (W)"
+    fmt="num2"
+    description="Period average"
+    emptySet="pass"
+    emptyMessage="No data"
+  />
+</Grid>
+
 ## Performance Trends
 
 ```sql minute_data
@@ -140,7 +181,9 @@ SELECT
   date_trunc('minute', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) as minute,
   round(avg(cpu_temp_c), 1) as "CPU Temp (°C)",
   round(avg(cpu_load_1min), 2) as "Load (1m)",
-  round(avg(memory_percent_used), 1) as "Memory (%)"
+  round(avg(memory_percent_used), 1) as "Memory (%)",
+  round(avg(est_power_w), 2) as "Power (W)",
+  round(avg(cpu_voltage_v), 3) as "Voltage (V)"
 FROM ${raw_data}
 GROUP BY 1
 ORDER BY minute
@@ -167,6 +210,26 @@ ORDER BY minute
   emptySet="pass"
   emptyMessage="No data available"
 />
+
+<LineChart
+  data={minute_data}
+  x=minute
+  y={['Power (W)']}
+  y2={['Voltage (V)']}
+  title="Power Consumption & Voltage"
+  xFmt="HH:mm"
+  chartAreaHeight=200
+  emptySet="pass"
+  emptyMessage="No data available"
+/>
+
+<Details title='About Power Estimation'>
+
+Power consumption is estimated using the formula: **Base (0.8W) + CPU Load Factor + Temperature Factor**
+
+This provides an approximation for Raspberry Pi devices. Actual consumption may vary based on peripherals, WiFi activity, and sensor usage.
+
+</Details>
 
 {:else}
 
