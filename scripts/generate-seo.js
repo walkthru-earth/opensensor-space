@@ -18,7 +18,8 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const SITE_URL = 'https://opensensor.space';
-const BUILD_DIR = process.argv[2] || path.join(__dirname, '..', 'build', 'opensensor-space');
+// Resolve to absolute path to ensure consistent path handling
+const BUILD_DIR = path.resolve(process.argv[2] || path.join(__dirname, '..', 'build', 'opensensor-space'));
 
 /**
  * Recursively find all HTML files in build directory
@@ -69,24 +70,24 @@ function extractMetadata(htmlPath) {
  * Convert file path to URL path
  */
 function fileToUrlPath(filePath, buildDir) {
-  // Normalize paths to use forward slashes
-  const normalizedFile = filePath.replace(/\\/g, '/');
-  const normalizedBuild = buildDir.replace(/\\/g, '/');
+  // Resolve both paths to absolute and normalize to forward slashes
+  const absoluteFile = path.resolve(filePath).replace(/\\/g, '/');
+  const absoluteBuild = path.resolve(buildDir).replace(/\\/g, '/');
 
   // Remove build directory prefix
-  let urlPath = normalizedFile.replace(normalizedBuild, '');
+  let urlPath = absoluteFile.replace(absoluteBuild, '');
 
   // Remove index.html suffix
   urlPath = urlPath.replace(/\/index\.html$/, '');
 
+  // Handle root path
+  if (urlPath === '' || urlPath === '/') {
+    return '/';
+  }
+
   // Ensure path starts with /
   if (!urlPath.startsWith('/')) {
     urlPath = '/' + urlPath;
-  }
-
-  // Handle root path
-  if (urlPath === '' || urlPath === '/index.html') {
-    return '/';
   }
 
   return urlPath;
@@ -377,6 +378,7 @@ Example path: station=019ab390-f291-7a30-bca8-381286e4c2aa/year=2024/month=12/da
  */
 async function main() {
   console.log('🔍 Scanning build directory:', BUILD_DIR);
+  console.log('   Resolved path:', path.resolve(BUILD_DIR));
 
   if (!fs.existsSync(BUILD_DIR)) {
     console.error('❌ Build directory not found. Run "bun run build" first.');
