@@ -2,13 +2,14 @@
   "name": "opensensor-space",
   "version": "0.0.1",
   "scripts": {
-    "build": "EVIDENCE_BUILD_DIR=./build/opensensor-space evidence build",
-    "build:strict": "evidence build:strict",
+    "build": "EVIDENCE_BUILD_DIR=./build/opensensor-space evidence build && node scripts/generate-seo.js ./build/opensensor-space",
+    "build:strict": "evidence build:strict && node scripts/generate-seo.js ./build/opensensor-space",
     "dev": "evidence dev --open /",
     "test": "evidence build",
     "sources": "evidence sources",
     "sources:strict": "evidence sources --strict",
-    "preview": "evidence preview"
+    "preview": "evidence preview",
+    "generate-seo": "node scripts/generate-seo.js ./build/opensensor-space"
   },
   "engines": {
     "npm": ">=7.0.0",

@@ -38,6 +38,7 @@ jobs:
           fi
 
       - name: Build
+        # Build includes automatic SEO file generation (sitemap.xml, robots.txt, llms.txt)
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
           ## EVIDENCE_SOURCE__my_source__username: ${{ secrets.EVIDENCE_SOURCE__MY_SOURCE__USERNAME }}
