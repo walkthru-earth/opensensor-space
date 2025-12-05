@@ -69,12 +69,27 @@ function extractMetadata(htmlPath) {
  * Convert file path to URL path
  */
 function fileToUrlPath(filePath, buildDir) {
-  let urlPath = filePath
-    .replace(buildDir, '')
-    .replace(/[\\\/]index\.html$/, '')
-    .replace(/\\/g, '/');
+  // Normalize paths to use forward slashes
+  const normalizedFile = filePath.replace(/\\/g, '/');
+  const normalizedBuild = buildDir.replace(/\\/g, '/');
 
-  return urlPath || '/';
+  // Remove build directory prefix
+  let urlPath = normalizedFile.replace(normalizedBuild, '');
+
+  // Remove index.html suffix
+  urlPath = urlPath.replace(/\/index\.html$/, '');
+
+  // Ensure path starts with /
+  if (!urlPath.startsWith('/')) {
+    urlPath = '/' + urlPath;
+  }
+
+  // Handle root path
+  if (urlPath === '' || urlPath === '/index.html') {
+    return '/';
+  }
+
+  return urlPath;
 }
 
 /**
@@ -376,6 +391,7 @@ async function main() {
   const pages = htmlFiles.map(file => {
     const urlPath = fileToUrlPath(file, BUILD_DIR);
     const metadata = extractMetadata(file);
+    console.log(`  📝 ${urlPath}`);
     return {
       path: urlPath,
       ...metadata
