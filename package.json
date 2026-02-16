@@ -18,16 +18,16 @@
   },
   "type": "module",
   "dependencies": {
-    "@evidence-dev/core-components": "^5.4.0",
-    "@evidence-dev/csv": "^1.0.15",
-    "@evidence-dev/duckdb": "^2.0.0",
-    "@evidence-dev/evidence": "^40.1.6",
+    "@evidence-dev/core-components": "^5.4.2",
+    "@evidence-dev/csv": "^1.0.16",
+    "@evidence-dev/duckdb": "^2.0.1",
+    "@evidence-dev/evidence": "^40.1.8",
     "@evidence-dev/source-javascript": "^0.0.3",
-    "@evidence-dev/sqlite": "^2.0.8",
-    "@evidence-dev/tailwind": "^3.1.2",
-    "caniuse-lite": "^1.0.30001767",
+    "@evidence-dev/sqlite": "^2.0.9",
+    "@evidence-dev/tailwind": "^3.1.4",
+    "caniuse-lite": "^1.0.30001770",
     "mermaid": "^11.12.2",
-    "posthog-js": "^1.339.1"
+    "posthog-js": "^1.347.2"
   },
   "overrides": {
     "jsonwebtoken": ">=9.0.2",
