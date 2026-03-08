@@ -25,9 +25,9 @@
     "@evidence-dev/source-javascript": "^0.0.3",
     "@evidence-dev/sqlite": "^2.0.9",
     "@evidence-dev/tailwind": "^3.1.4",
-    "caniuse-lite": "^1.0.30001770",
-    "mermaid": "^11.12.2",
-    "posthog-js": "^1.347.2"
+    "caniuse-lite": "^1.0.30001777",
+    "mermaid": "^11.12.3",
+    "posthog-js": "^1.359.1"
   },
   "overrides": {
     "jsonwebtoken": ">=9.0.2",
