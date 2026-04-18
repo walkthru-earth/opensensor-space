@@ -1,3 +1,18 @@
 station_id,station_name,sensor_type,latitude,longitude,station_type,storage_url,description,contributor_name,contributor_url,submitted_at,status
+019d97ff-3220-74fc-8923-f9fb69e2273d,Data for Canada Open Sensor 01 (d4c-opensensor-01),enviroplus,45.383178,-75.713931,Indoor,s3://us-west-2.opendata.source.coop/dataforcanada/d4c-datapkg-environment-climate-health/archive/opensensor.space/enviroplus/station=019d97ff-3220-74fc-8923-f9fb69e2273d/,"### **Description for d4c-opensensor-01**
+
+**Sensor ID:** `d4c-opensensor-01`  
+**Spatial Reference:** 2021 Ottawa Census Subdivision (CSD)
+
+**Description:** This open environmental monitoring node is currently associated with the **Central Experimental Farm** in Ottawa. Please note that the coordinates (**45.383° N, 75.714° W**) are currently set as a baseline reference point within the official **2021 Ottawa city boundaries** (DGUID: `2021A00053506008`).
+
+This is a **temporary deployment location**. The metadata for `d4c-opensensor-01` will be updated to reflect its permanent installation site and precise geospatial coordinates once the sensor is relocated.
+
+While at this reference node, the sensor monitors atmospheric conditions at the intersection of the National Capital Region's urban core and managed agricultural research land. By utilizing the Statistics Canada DGUID standard, the data remains programmatically linked to the 2021 standard geographic areas for dissemination, ensuring that even temporary telemetry can be analyzed against longitudinal municipal datasets. All data from this unit is open-source and intended to support decentralized geomatics and climate resilience initiatives.
+
+### **Technical Status & Update Log**
+* **Deployment Phase:** Initial Testing / Temporary Placement.
+* **Geospatial Anchor:** DGUID `2021A00053506008` (Census Subdivision), to be updated to the lowest geographic level available from StatCan.
+* **Future Updates:** High-precision coordinates and site-specific metadata will be pushed to the registry upon final hardware relocation to its permanent Ottawa site.",Diego Ripley / Data for Canada,https://www.dataforcanada.org/,2026-04-18,pending
 019ab390-f291-7a30-bca8-381286e4c2aa,Enviro+ Outdoor New Cairo,enviroplus,30.055625,31.490288,Outdoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=019ab390-f291-7a30-bca8-381286e4c2aa/,,,,2025-11-26,approved
 0195ae3c-43e0-7624-8c5c-7424adbcc30d,Enviro+,enviroplus,30.0626,31.4916,Indoor,s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=0195ae3c-43e0-7624-8c5c-7424adbcc30d/,Reference environmental monitoring station,OpenSensor Team,https://opensensor.space,2025-04-01,approved
