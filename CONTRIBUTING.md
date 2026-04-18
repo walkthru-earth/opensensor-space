@@ -4,161 +4,168 @@
 
 1. Go to [opensensor.space/admin](https://opensensor.space/admin/)
 2. Sign in with GitHub (this forks the repo to your account)
-3. Fill out the station form
-4. Submit → PR created → Auto-validated → Merged to CSV
+3. Fill out the station form and save
+4. Decap CMS opens a PR from your fork to the `contributions` branch
+5. Automated validation runs against your S3 path
+6. A maintainer flips `status` from `pending` to `approved` and merges
+7. On the next deploy, your station appears on the dashboard
 
-## Workflow Overview
+## Workflow overview
 
 ```mermaid
 flowchart LR
-    A[User] -->|1. Submit Form| B[Decap CMS]
-    B -->|2. Fork + PR| C[contributions branch]
-    C -->|3. Validates| D[GitHub Actions]
-    D -->|4. Merge PR| C
-    C -->|5. Triggers| E[Process Workflow]
-    E -->|6. DuckDB YAML→CSV| F[stations.csv PR]
-    F -->|7. Merge| G[main branch]
-    G -->|8. Deploy| H[Dashboard]
+  A[Contributor] -->|1. submit form| B[Decap CMS<br/>/admin]
+  B -->|2. fork + PR| C[contributions branch]
+  C -->|3. validate-station-contributions.yml<br/>UUIDv7 + S3 ls| V[PR comment pass/fail]
+  V -->|4. maintainer approves status| C
+  C -->|5. push to main triggers deploy| D[deploy.yml]
+  D -->|6. sync YAML to CSV<br/>bun run sources + build| G[GitHub Pages]
+  G -->|7. your station is live| U[Dashboard]
 ```
 
-## Detailed Flow
+## Detailed flow
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant CMS as Decap CMS
-    participant Fork as User's Fork
-    participant CB as contributions branch
-    participant VA as Validate Workflow
-    participant S3 as S3 Storage
-    participant PA as Process Workflow
-    participant DB as DuckDB
-    participant M as main branch
+  actor C as Contributor
+  participant CMS as Decap CMS
+  participant Fork as Contributor Fork
+  participant CB as contributions branch
+  participant VW as validate workflow
+  participant S3 as S3 (opendata.source.coop)
+  participant M as main branch
+  participant DW as deploy workflow
+  participant GP as GitHub Pages
 
-    U->>CMS: 1. Submit station form
-    CMS->>Fork: 2. Create YAML in fork
-    Fork->>CB: 3. Open PR to contributions
-    CB->>VA: 4. Trigger validation
-    VA->>S3: 5. aws s3 ls --no-sign-request
-    S3-->>VA: 6. ✓ Files exist
-    VA->>CB: 7. Comment results on PR
-    Note over CB: Admin reviews & merges PR
-    CB->>PA: 8. Trigger on push to contributions
-    PA->>DB: 9. read_yaml_objects('*.yml')
-    DB->>DB: 10. Merge with existing CSV
-    PA->>M: 11. Create PR with updated CSV
-    Note over M: Admin merges stations PR
-    M->>M: 12. Deploy to GitHub Pages
+  C->>CMS: 1. Fill station form at /admin
+  CMS->>Fork: 2. Commit content/stations/<uuid>.yml<br/>(status: pending)
+  Fork->>CB: 3. Open PR cms/<user>/.../stations/<uuid>
+  CB->>VW: 4. pull_request_target trigger
+  VW->>S3: 5. aws s3 ls --no-sign-request
+  S3-->>VW: 6. path exists
+  VW->>CB: 7. Comment PASS/FAIL on PR
+  Note over CB: Maintainer flips status: approved,<br/>merges the PR
+  Note over M,DW: Next push to main (e.g. CSV update)<br/>OR weekly cron
+  DW->>CB: 8. git checkout content/stations
+  DW->>DW: 9. duckdb sync-yaml-to-csv.sql<br/>bun run sources<br/>bun run build
+  DW->>GP: 10. Upload Pages artifact
+  GP-->>C: 11. Station live on dashboard
 ```
 
-## Data Flow
+## Data flow
 
 ```mermaid
 flowchart TB
-    subgraph contributions["contributions branch"]
-        YAML["content/stations/*.yml"]
-    end
+  subgraph contributions[contributions branch]
+    YAML["content/stations/*.yml<br/>(source of truth)"]
+  end
 
-    subgraph workflow["GitHub Actions"]
-        DuckDB["DuckDB v1.4.2<br/>YAML Extension"]
-    end
+  subgraph deploy[deploy.yml on main]
+    SYNC["duckdb sync-yaml-to-csv.sql<br/>regenerates stations.csv"]
+    SOURCES["bun run sources<br/>runs all_stations.sql"]
+  end
 
-    subgraph main["main branch"]
-        CSV["sources/stations/stations.csv"]
-        SQL1["sources/stations/station_registry.sql"]
-        SQL2["sources/stations/all_stations.sql"]
-    end
+  subgraph main[main branch]
+    CSV[sources/stations/stations.csv]
+    REG[sources/stations/station_registry.sql<br/>WHERE status = approved]
+    AGG["sources/stations/all_stations.sql<br/>globs driven by registry storage_url<br/>SET s3_url_style=path"]
+  end
 
-    subgraph dashboard["Evidence Dashboard"]
-        UI["opensensor.space"]
-    end
+  subgraph browser[duckdb-wasm in browser]
+    HIST[historical pages<br/>read cached all_stations]
+    LIVE["near-real-time.md<br/>read_parquet() live from S3"]
+  end
 
-    subgraph storage["S3 Storage"]
-        Parquet["Hive-partitioned Parquet"]
-    end
+  subgraph storage[S3 public buckets]
+    P1[us-west-2.opendata.source.coop/<br/>walkthru-earth/...]
+    P2[us-west-2.opendata.source.coop/<br/>dataforcanada/... etc.]
+  end
 
-    YAML -->|read_yaml_objects| DuckDB
-    DuckDB -->|COPY TO CSV| CSV
-    CSV -->|read_csv_auto| SQL1
-    SQL1 -->|approved stations| UI
-    SQL2 -->|read_parquet| Parquet
-    Parquet --> UI
+  YAML --> SYNC
+  SYNC --> CSV
+  CSV --> REG
+  CSV --> AGG
+  AGG --> P1
+  AGG --> P2
+  REG --> HIST
+  AGG --> HIST
+  P1 -. 15-min bucket URL .-> LIVE
+  P2 -. 15-min bucket URL .-> LIVE
 ```
 
 ## Branches
 
 | Branch | Purpose |
-|--------|---------|
-| `main` | Production - Evidence dashboard, stations.csv |
-| `contributions` | CMS submissions (YAML files) |
+|---|---|
+| `main` | Production site, built by `deploy.yml` to GitHub Pages |
+| `contributions` | YAML source of truth for the station registry, CMS merges land here |
+| `cms/<user>/.../stations/<uuid>` | Ephemeral PR branches created by Decap CMS, auto-deleted on merge |
 
 ## Files
 
 | File | Location | Description |
-|------|----------|-------------|
-| `content/stations/*.yml` | contributions | Station YAML submissions |
-| `sources/stations/stations.csv` | main | Station registry (CSV) |
-| `sources/stations/station_registry.sql` | main | Query approved stations |
-| `sources/stations/all_stations.sql` | main | Query sensor data from S3 |
+|---|---|---|
+| `content/stations/<id>.yml` | `contributions` | One YAML per station, written by Decap CMS |
+| `sources/stations/stations.csv` | `main` | Materialized registry, regenerated every deploy |
+| `sources/stations/station_registry.sql` | `main` | Filters CSV to approved rows |
+| `sources/stations/all_stations.sql` | `main` | Hourly aggregation across all approved stations, multi-bucket aware |
+| `sources/stations/sync-yaml-to-csv.sql` | `main` | DuckDB script that reads YAMLs and writes the CSV |
+| `static/admin/config.yml` | `main` | Decap CMS field schema |
+| `.github/workflows/deploy.yml` | `main` | Build and deploy, runs on push + weekly cron |
+| `.github/workflows/validate-station-contributions.yml` | `main`, `contributions` | On CMS PR: UUIDv7 + S3 check |
 
-## Station Status
+## Station status
 
-| Status | Description |
-|--------|-------------|
-| `pending` | Newly added, awaiting approval |
-| `approved` | Validated and visible on dashboard |
+| Status | Visible on dashboard |
+|---|---|
+| `pending` | No, filtered out by `station_registry.sql` |
+| `approved` | Yes |
 
-## DuckDB Queries
+Status lives in the YAML (`content/stations/<id>.yml` on the `contributions` branch). Maintainers flip the field and merge; no separate approval workflow exists anymore.
 
-### Station Registry (station_registry.sql)
+## Where your parquet data should live
 
-```sql
-SELECT * FROM read_csv_auto('sources/stations/stations.csv')
-WHERE status = 'approved'
+A station's `storage_url` must:
+
+- Be a publicly readable S3 URL ending with a trailing slash
+- Be listable anonymously: `aws s3 ls <storage_url> --no-sign-request`
+- Contain Hive-partitioned parquet following:
+
+```
+<storage_url>year=YYYY/month=MM/day=DD/data_HHMM.parquet
 ```
 
-### All Stations Data (all_stations.sql)
+where `HHMM` is a 15-minute bucket (`HH` the UTC hour, `MM` one of `00 15 30 45`).
 
-```sql
-SELECT
-    station as station_id,
-    date_trunc('hour', timestamp) as timestamp,
-    round(avg(temperature), 2) as temperature,
-    -- ... other metrics
-FROM read_parquet(
-    's3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/**/*.parquet',
-    union_by_name=true,
-    hive_partitioning=true
-)
-GROUP BY station, date_trunc('hour', timestamp)
+Default bucket: `s3://us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=<id>/`. Contributors with their own public `source.coop` bucket (e.g. `dataforcanada/...`) are fully supported. The registry drives the parquet glob, no file edits required.
+
+### source.coop note
+
+`source.coop` bucket names contain dots, which breaks virtual-hosted SSL. `all_stations.sql` sets `s3_url_style = 'path'` and `s3_region = 'us-west-2'` so DuckDB resolves URLs as `https://s3.us-west-2.amazonaws.com/<bucket>/<path>`. If you host parquet on a bucket in a different region, coordinate with maintainers first.
+
+## Validation checks (run automatically on your PR)
+
+1. UUIDv7 format for `station_id`
+2. S3 URL starts with `s3://` and follows `s3://<bucket>/<path>/`
+3. Path is publicly listable via `aws s3 ls --no-sign-request`
+
+A green check + `validation passed` comment means the PR is ready for maintainer review.
+
+## What maintainers do
+
+1. Read the PR, open the storage URL, sanity check the YAML
+2. Edit the YAML field `status: pending` → `status: approved`
+3. Merge the PR into `contributions`
+
+The next deploy (or `workflow_dispatch`) pulls the latest YAMLs, rebuilds `stations.csv`, re-aggregates hourly data, and publishes.
+
+## Local development
+
+```bash
+bun install
+bun run sources    # scans S3 via all_stations.sql, writes .evidence/template/static/data/
+bun run dev        # opens http://localhost:3000
+bun run build      # produces build/opensensor-space/ and runs SEO generation
 ```
 
-### YAML to CSV Processing (GitHub Actions)
-
-```sql
-INSTALL yaml FROM community;
-LOAD yaml;
-
--- Read YAML files (struct access via yaml.field)
-SELECT
-    yaml.station_id,
-    yaml.station_name,
-    CAST(json_extract(yaml.location::JSON, '$.coordinates[1]') AS DOUBLE) as latitude,
-    CAST(json_extract(yaml.location::JSON, '$.coordinates[0]') AS DOUBLE) as longitude,
-    -- ... other fields
-FROM read_yaml_objects('content/stations/*.yml')
-```
-
-## Requirements
-
-Your S3 storage URL must:
-- Be publicly accessible (no auth required)
-- Contain Parquet files with hive partitioning
-- Follow the path format: `station={STATION_ID}/year={year}/month={month}/day={day}/*.parquet`
-
-## Validation Checks
-
-1. **UUIDv7 Format** - Station ID must be valid UUIDv7
-2. **S3 URL Format** - Must start with `s3://`
-3. **S3 Accessibility** - Path must be publicly listable
-4. **Parquet Files** - Data must exist in the specified location
+First `bun run sources` may take several minutes as it scans every approved station's S3 partitions.
