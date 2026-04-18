@@ -1,11 +1,29 @@
 name: Deploy to GitHub Pages
 
+# Triggers:
+#   - push to main (only when site-relevant paths change)
+#   - weekly cron to refresh hourly aggregates with newer S3 telemetry
+#   - manual dispatch
 on:
-  schedule:
-    - cron: '0 1 * * *'
   push:
-    branches: 'main'
+    branches: [main]
+    paths:
+      - 'pages/**'
+      - 'components/**'
+      - 'sources/**'
+      - 'static/**'
+      - 'scripts/**'
+      - 'evidence.config.yaml'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/deploy.yml'
+  schedule:
+    - cron: '0 1 * * 1'   # Monday 01:00 UTC
   workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -19,10 +37,27 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
+
+      - name: Cache DuckDB CLI
+        id: cache-duckdb
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/duckdb
+          key: duckdb-cli-1.4.2-linux-amd64
 
       - name: Setup DuckDB
+        if: steps.cache-duckdb.outputs.cache-hit != 'true'
         run: |
           curl -L https://github.com/duckdb/duckdb/releases/download/v1.4.2/duckdb_cli-linux-amd64.zip -o duckdb.zip
           unzip duckdb.zip
@@ -31,18 +66,22 @@ jobs:
 
       - name: Sync stations from contributions branch
         run: |
-          git fetch origin contributions
+          git fetch origin contributions --depth=1
           git checkout origin/contributions -- content/stations 2>/dev/null || echo "No stations on contributions branch"
           if [ -d "content/stations" ]; then
             duckdb -c ".read sources/stations/sync-yaml-to-csv.sql"
           fi
 
+      - name: Cache Evidence source output
+        uses: actions/cache@v4
+        with:
+          path: .evidence/template/static/data
+          key: evidence-sources-${{ hashFiles('sources/**', 'content/stations/**') }}
+          restore-keys: evidence-sources-
+
       - name: Build
-        # Build includes automatic SEO file generation (sitemap.xml, robots.txt, llms.txt)
         env:
           BASE_PATH: '/${{ github.event.repository.name }}'
-          ## EVIDENCE_SOURCE__my_source__username: ${{ secrets.EVIDENCE_SOURCE__MY_SOURCE__USERNAME }}
-          ## EVIDENCE_SOURCE__my_source__private_key: ${{ secrets.EVIDENCE_SOURCE__MY_SOURCE__PRIVATE_KEY }}
         run: |
           bun run sources
           bun run build
