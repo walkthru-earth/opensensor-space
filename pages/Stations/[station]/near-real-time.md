@@ -4,7 +4,19 @@ hide_title: true
 ---
 
 ```sql station_info
-SELECT * FROM station_registry WHERE station_id = '${params.station}'
+-- Derive the current 15-minute parquet URL from the registry's storage_url.
+-- Path-style HTTPS is required because source.coop bucket names contain dots,
+-- which would otherwise break virtual-hosted SSL cert validation.
+SELECT
+  *,
+  replace(storage_url, 's3://', 'https://s3.us-west-2.amazonaws.com/')
+    || 'year=' || year(current_timestamp AT TIME ZONE 'UTC')::int::varchar
+    || '/month=' || lpad(month(current_timestamp AT TIME ZONE 'UTC')::int::varchar, 2, '0')
+    || '/day=' || lpad(day(current_timestamp AT TIME ZONE 'UTC')::int::varchar, 2, '0')
+    || '/data_' || lpad(hour(current_timestamp AT TIME ZONE 'UTC')::int::varchar, 2, '0')
+    || lpad((floor((minute(current_timestamp AT TIME ZONE 'UTC') - 1) / 15) * 15)::int::varchar, 2, '0')
+    || '.parquet' as realtime_parquet_url
+FROM station_registry WHERE station_id = '${params.station}'
 ```
 
 # {station_info[0].station_name} - Near Real-Time
@@ -33,7 +45,7 @@ SELECT
   pm1,
   pm25,
   pm10
-FROM read_parquet('https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus/station=${params.station}/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, "0")}/day=${String(new Date().getUTCDate()).padStart(2, "0")}/data_${String(new Date().getUTCHours()).padStart(2, "0")}${String((m => m < 15 ? 0 : Math.floor(m / 15) * 15)(new Date().getUTCMinutes())).padStart(2, "0")}.parquet')
+FROM read_parquet('${station_info[0].realtime_parquet_url}')
 ORDER BY timestamp
 ```
 
