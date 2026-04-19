@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 # Triggers:
 #   - push to main (only when site-relevant paths change)
-#   - weekly cron to refresh hourly aggregates with newer S3 telemetry
+#   - daily cron to refresh hourly aggregates with newer S3 telemetry
 #   - manual dispatch
 on:
   push:
@@ -18,7 +18,7 @@ on:
       - 'bun.lock'
       - '.github/workflows/deploy.yml'
   schedule:
-    - cron: '0 1 * * 1'   # Monday 01:00 UTC
+    - cron: '0 1 * * *'   # daily 01:00 UTC
   workflow_dispatch:
 
 concurrency:

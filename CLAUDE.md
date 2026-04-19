@@ -129,7 +129,7 @@ Every station publishes parquet under:
 
 ## Workflows
 
-- **Deploy**: triggered on push to `main`, weekly cron (Monday 01:00 UTC), and manual dispatch. Checks out YAMLs from `contributions`, rebuilds `stations.csv` via DuckDB, runs `bun run sources` then `bun run build`, uploads Pages artifact
+- **Deploy**: triggered on push to `main`, daily cron (01:00 UTC), and manual dispatch. Checks out YAMLs from `contributions`, rebuilds `stations.csv` via DuckDB, runs `bun run sources` then `bun run build`, uploads Pages artifact
 - **Validate contributions**: triggered on PR to `contributions` touching `content/stations/**`. Runs UUIDv7 regex, S3 `aws s3 ls --no-sign-request` check, comments on PR. About 18s
 - No `process-approved-stations.yml` anymore. The YAML→CSV sync runs inside `deploy.yml`
 
@@ -159,4 +159,4 @@ First `bun run sources` may take several minutes while it scans all station part
 
 - Historical page queries will move from cached aggregates to runtime `read_parquet(<storage_url>...**/*.parquet', hive_partitioning=true)` so builds stop being a data pipeline
 - A tiny partition catalog source (one S3 LIST per station emitted as parquet) will back dropdowns so the user only ever picks date ranges that exist
-- Once the migration is complete the weekly cron can be deleted entirely; deploys become pure static compile and run in under a minute
+- Once the migration is complete the daily cron can be deleted entirely; deploys become pure static compile and run in under a minute

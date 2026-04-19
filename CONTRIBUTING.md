@@ -45,7 +45,7 @@ sequenceDiagram
   S3-->>VW: 6. path exists
   VW->>CB: 7. Comment PASS/FAIL on PR
   Note over CB: Maintainer flips status: approved,<br/>merges the PR
-  Note over M,DW: Next push to main (e.g. CSV update)<br/>OR weekly cron
+  Note over M,DW: Next push to main (e.g. CSV update)<br/>OR daily cron
   DW->>CB: 8. git checkout content/stations
   DW->>DW: 9. duckdb sync-yaml-to-csv.sql<br/>bun run sources<br/>bun run build
   DW->>GP: 10. Upload Pages artifact
@@ -111,7 +111,7 @@ flowchart TB
 | `sources/stations/all_stations.sql` | `main` | Hourly aggregation across all approved stations, multi-bucket aware |
 | `sources/stations/sync-yaml-to-csv.sql` | `main` | DuckDB script that reads YAMLs and writes the CSV |
 | `static/admin/config.yml` | `main` | Decap CMS field schema |
-| `.github/workflows/deploy.yml` | `main` | Build and deploy, runs on push + weekly cron |
+| `.github/workflows/deploy.yml` | `main` | Build and deploy, runs on push + daily cron |
 | `.github/workflows/validate-station-contributions.yml` | `main`, `contributions` | On CMS PR: UUIDv7 + S3 check |
 
 ## Station status
