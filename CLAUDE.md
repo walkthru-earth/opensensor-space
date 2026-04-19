@@ -144,6 +144,43 @@ Every station publishes parquet under:
 - `alembic/` and `src/` are empty scaffolding; there is no Python backend. Do not add migrations
 - The `contributions-clean` branch is dead. Do not target PRs at it
 
+## Runtime duckdb-wasm constraints
+
+These only apply to queries that run in the browser (the `.md` SQL blocks inside `pages/`). Build-time sources (`sources/stations/*.sql`) have no such limits because they run in full DuckDB.
+
+- **Single-statement only.** The `INSTALL httpfs; LOAD httpfs; SET s3_region=...; SELECT ...` pattern that works in CLI sources throws `Parser Error: syntax error at or near ";"` in the browser. Each SQL block must be exactly one statement.
+- **No S3 protocol and no S3 listing.** `s3://` URLs and glob wildcards (`**/*.parquet`, `year=*/...`) don't resolve in duckdb-wasm. Use explicit HTTPS URLs to individual parquet files.
+- **Pattern for "latest file" queries.** When the target file is whichever bucket currently exists (health page, near-real-time page), construct a single deterministic URL in SQL from `storage_url` and `current_timestamp`, and shift the timestamp back by enough hours to cover the station's upload lag. Three hours is what the health page uses.
+
+## Station file partition convention
+
+Stations write parquet under `year=YYYY/month=MM/day=DD/<stream>_HHMM.parquet` where `year/month/day` are the UTC date the file was **created**, not the UTC date of the timestamps inside. A station writer that started at 23:00 UTC keeps writing into `day=23` past midnight until it rolls over. This matters for any page that builds a single-URL fetch against "today's" partition, it will 404 across midnight for up to an hour or two until the writer rolls over.
+
+## Sensor damage thresholds
+
+Each sensor page (`particulate-matter.md`, `gas-sensors.md`, `temperature-and-humidity.md`, `pressure.md`, `light-and-proximity.md`) runs a `data_quality` query that flags rows outside physically plausible bounds, renders a warning banner when damaged rows exist, and filters the bad rows out of every chart and tile. When adding a new sensor page or channel, follow the same pattern. Current bounds:
+
+| Sensor | Damaged if |
+|---|---|
+| PM (PMS5003) | `pm1 = pm25 = pm10 > 0` (impossible, larger bins are supersets) or any channel > 1000 μg/m³ |
+| MICS-6814 gas (oxidised, reducing, nh3) | `< 0` kΩ (impossible) or `> 10000` kΩ (open circuit) |
+| BME280 temperature | outside −40 to 85 °C (sensor operating range) |
+| BME280 humidity | outside 0 to 100 % (physical bound) |
+| BME280 pressure | outside 300 to 1100 hPa (sensor operating range) |
+| LTR-559 lux | outside 0 to 64000 |
+| LTR-559 proximity | outside 0 to 2047 (raw ADC max) |
+
+## Evidence DateRange UTC truncation
+
+`<DateRange>` returns `inputs.date_filter.start` and `.end` as `YYYY-MM-DD` strings formed by `date.toISOString().split('T')[0]`. That always formats in UTC, so for users east of UTC the end date silently shifts back one day before reaching DuckDB. Symptom: "Last 7 Days" / "Last 30 Days" / "All Time" return empty on a station whose latest data is only on today's local date, while "Month to Date" / "Year to Date" work because `endOfMonth` / `endOfYear` are past today.
+
+Workaround in every date-filtered SQL query: widen the upper bound by one day.
+
+```sql
+where ts::date between '${inputs.date_filter.start}'::date
+  and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+```
+
 ## Running locally
 
 ```bash
