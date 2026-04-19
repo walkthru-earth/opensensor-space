@@ -40,15 +40,53 @@ where station_id = '${params.station}'
 
 ## Light and Proximity Summary
 
+```sql data_quality
+-- Detect damaged LTR-559 readings.
+-- Lux operating range is 0 to 64000; proximity is 0 to 2047 (raw ADC).
+select
+  count(*) as total_rows,
+  sum(case
+    when lux < 0 or lux > 64000
+      or proximity < 0 or proximity > 2047
+    then 1 else 0 end) as damaged_rows,
+  round(100.0 * sum(case
+    when lux < 0 or lux > 64000
+      or proximity < 0 or proximity > 2047
+    then 1 else 0 end) / nullif(count(*), 0), 1) as damaged_pct,
+  strftime(min(case
+    when lux < 0 or lux > 64000
+      or proximity < 0 or proximity > 2047
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as first_damaged,
+  strftime(max(case
+    when lux < 0 or lux > 64000
+      or proximity < 0 or proximity > 2047
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as last_damaged
+from all_stations
+where station_id = '${params.station}'
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and (lux is not null or proximity is not null)
+```
+
+{#if data_quality[0].damaged_rows > 0}
+<Alert status="warning">
+
+**LTR-559 sensor fault detected.** {data_quality[0].damaged_rows} of {data_quality[0].total_rows} hourly readings in this range ({data_quality[0].damaged_pct}%) look damaged, lux outside 0 to 64000 or proximity outside 0 to 2047. First flagged reading {data_quality[0].first_damaged}, last {data_quality[0].last_damaged}. These readings are excluded from the charts and averages below.
+
+</Alert>
+{/if}
+
 ```sql main_data
--- Get the base light and proximity data we need
+-- Get the base light and proximity data we need, filtering out damaged rows.
+-- LTR-559 lux range is 0 to 64000, proximity is 0 to 2047 (raw ADC).
 select
   timestamp,
   lux,
   proximity
 from all_stations
 where station_id = '${params.station}'
-  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and coalesce(lux, 0) between 0 and 64000
+  and coalesce(proximity, 0) between 0 and 2047
 ```
 
 ```sql summary_stats
@@ -59,10 +97,10 @@ select
   round(min(proximity), 1) as min_proximity,
   round(max(proximity), 1) as max_proximity,
   round(avg(proximity), 1) as avg_proximity,
-  min_lux || ' - ' || max_lux || ' lux' as lux_range,
-  'Avg: ' || avg_lux || ' lux' as lux_avg,
-  min_proximity || ' - ' || max_proximity as proximity_range,
-  'Avg: ' || avg_proximity as proximity_avg,
+  concat_ws(' ', coalesce(min_lux::varchar, '—'), '-', coalesce(max_lux::varchar, '—'), 'lux') as lux_range,
+  'Avg: ' || coalesce(avg_lux::varchar, '—') || ' lux' as lux_avg,
+  concat_ws(' ', coalesce(min_proximity::varchar, '—'), '-', coalesce(max_proximity::varchar, '—')) as proximity_range,
+  'Avg: ' || coalesce(avg_proximity::varchar, '—') as proximity_avg,
   CASE
     WHEN avg_lux < 50 THEN 'bg-gray-50'
     WHEN avg_lux < 500 THEN 'bg-yellow-50'
@@ -118,8 +156,9 @@ SELECT
   round(avg(proximity), 1) as avg_proximity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date >= '${inputs.date_filter.start}'::date
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date <= '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(lux, 0) between 0 and 64000
+  AND coalesce(proximity, 0) between 0 and 2047
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -183,37 +222,19 @@ Proximity sensor values may show different patterns based on its placement and w
 ## Time Series Analysis
 
 ```sql time_series_data
--- Format data for the time series chart (30-minute intervals)
-WITH time_buckets AS (
-  SELECT
-    timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as timestamp,
-    -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE
-      WHEN EXTRACT(MINUTE FROM timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 30
-      THEN date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
-      ELSE date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) + INTERVAL '30 minutes'
-    END AS half_hour_timestamp,
-    lux,
-    proximity
-  FROM ${main_data}
-)
-
+-- all_stations is already hourly-averaged, so select directly.
 SELECT
-  half_hour_timestamp,
-  round(avg(lux), 1) as value,
+  timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as local_timestamp,
+  lux as value,
   'Light (lux)' as sensor_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-
+FROM ${main_data}
 UNION ALL
-
 SELECT
-  half_hour_timestamp,
-  round(avg(proximity), 1) as value,
+  timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as local_timestamp,
+  proximity as value,
   'Proximity' as sensor_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-ORDER BY half_hour_timestamp, sensor_type
+FROM ${main_data}
+ORDER BY local_timestamp, sensor_type
 ```
 
 ```sql lux_extremes
@@ -233,11 +254,11 @@ where lux = (select max(lux) from ${main_data})
 
 <LineChart
   data={time_series_data}
-  x=half_hour_timestamp
+  x=local_timestamp
   y=value
   series=sensor_type
   title="Light and Proximity Readings Over Time"
-  subtitle="Average values in 30-minute buckets for smoother visualization"
+  subtitle="Hourly averages across the selected date range"
   chartAreaHeight=250
   lineWidth=3
   colors={["#f59e0b", "#6366f1"]}
@@ -256,9 +277,9 @@ where lux = (select max(lux) from ${main_data})
 
 <Details title='About This Chart'>
 
-This chart shows light and proximity readings averaged in 30-minute intervals, providing a smoother view of trends over time.
+This chart plots one point per hour from the aggregated registry.
 
-- Each point represents the average of all readings within a 30-minute period
+- Each point represents the average of all readings within that hour
 - Light levels (lux) show natural daily cycles with sunrise and sunset
 - Proximity values indicate object detection near the sensor
 
@@ -276,9 +297,10 @@ SELECT
   round(avg(proximity), 1) as avg_proximity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date >= '${inputs.date_filter.start}'::date
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date <= '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
   AND (lux IS NOT NULL OR proximity IS NOT NULL)
+  AND coalesce(lux, 0) between 0 and 64000
+  AND coalesce(proximity, 0) between 0 and 2047
 GROUP BY day
 ORDER BY day
 ```
@@ -288,15 +310,15 @@ ORDER BY day
   date=day
   value=avg_lux
   title="Daily Light Levels"
-  subtitle="Calendar view showing daily average light levels in lux"
+  subtitle="Daily average in lux. Log-like scale, since outdoor noon is 10,000+ lux and indoor is 100-500 lux."
   colorScale={[
     ["rgb(50, 50, 50)", "rgb(100, 100, 100)"],
     ["rgb(255, 204, 0)", "rgb(255, 255, 0)"],
     ["rgb(255, 165, 0)", "rgb(255, 140, 0)"]
   ]}
   min=0
-  max=1000
-  valueFmt="0.0"
+  max=50000
+  valueFmt="0"
 />
 
 <CalendarHeatmap

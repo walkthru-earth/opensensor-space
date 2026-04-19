@@ -40,14 +40,39 @@ where station_id = '${params.station}'
 
 ## Pressure Summary
 
+```sql data_quality
+-- Detect damaged BME280 pressure readings.
+-- Operating range is 300 to 1100 hPa; anything outside is a fault.
+select
+  count(*) as total_rows,
+  sum(case when pressure < 300 or pressure > 1100 then 1 else 0 end) as damaged_rows,
+  round(100.0 * sum(case when pressure < 300 or pressure > 1100 then 1 else 0 end) / nullif(count(*), 0), 1) as damaged_pct,
+  strftime(min(case when pressure < 300 or pressure > 1100 then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as first_damaged,
+  strftime(max(case when pressure < 300 or pressure > 1100 then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as last_damaged
+from all_stations
+where station_id = '${params.station}'
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and pressure is not null
+```
+
+{#if data_quality[0].damaged_rows > 0}
+<Alert status="warning">
+
+**BME280 pressure fault detected.** {data_quality[0].damaged_rows} of {data_quality[0].total_rows} hourly readings in this range ({data_quality[0].damaged_pct}%) look damaged, pressure outside the sensor's 300 to 1100 hPa operating range. First flagged reading {data_quality[0].first_damaged}, last {data_quality[0].last_damaged}. These readings are excluded from the charts and averages below.
+
+</Alert>
+{/if}
+
 ```sql main_data
--- Get the base pressure data we need
+-- Get the base pressure data we need, filtering out damaged rows.
+-- BME280 operating range is 300 to 1100 hPa.
 select
   timestamp,
   pressure
 from all_stations
 where station_id = '${params.station}'
-  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and coalesce(pressure, 1013) between 300 and 1100
 ```
 
 ```sql summary_stats
@@ -55,8 +80,8 @@ select
   round(min(pressure), 1) as min_pressure,
   round(max(pressure), 1) as max_pressure,
   round(avg(pressure), 1) as avg_pressure,
-  min_pressure || ' - ' || max_pressure || ' hPa' as pressure_range,
-  'Avg: ' || avg_pressure || ' hPa' as pressure_avg,
+  concat_ws(' ', coalesce(min_pressure::varchar, '—'), '-', coalesce(max_pressure::varchar, '—'), 'hPa') as pressure_range,
+  'Avg: ' || coalesce(avg_pressure::varchar, '—') || ' hPa' as pressure_avg,
   CASE
     WHEN avg_pressure < 1000 THEN 'bg-blue-50'
     WHEN avg_pressure > 1025 THEN 'bg-orange-50'
@@ -97,7 +122,8 @@ SELECT
   round(avg(pressure), 1) as avg_pressure
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(pressure, 1013) between 300 and 1100
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -144,26 +170,12 @@ The reference line at 1013.25 hPa shows standard sea level pressure.
 ## Pressure Time Series
 
 ```sql time_series_data
--- Format data for the time series chart (30-minute intervals)
-WITH time_buckets AS (
-  SELECT
-    timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as timestamp,
-    -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE
-      WHEN EXTRACT(MINUTE FROM timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 30
-      THEN date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
-      ELSE date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) + INTERVAL '30 minutes'
-    END AS half_hour_timestamp,
-    pressure
-  FROM ${main_data}
-)
-
+-- all_stations is already hourly-averaged, so select directly.
 SELECT
-  half_hour_timestamp,
-  round(avg(pressure), 1) as avg_pressure
-FROM time_buckets
-GROUP BY half_hour_timestamp
-ORDER BY half_hour_timestamp
+  timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as local_timestamp,
+  pressure as avg_pressure
+FROM ${main_data}
+ORDER BY local_timestamp
 ```
 
 ```sql pressure_extremes
@@ -183,11 +195,11 @@ where pressure = (select max(pressure) from ${main_data})
 
 <LineChart
   data={time_series_data}
-  x=half_hour_timestamp
+  x=local_timestamp
   y=avg_pressure
   yAxisTitle="Pressure (hPa)"
-  title="Atmospheric Pressure Over Time (30-min intervals)"
-  subtitle="Average values in 30-minute buckets for smoother visualization"
+  title="Atmospheric Pressure Over Time"
+  subtitle="Hourly averages across the selected date range"
   lineWidth=2
   chartAreaHeight=250
   color="#3b82f6"
@@ -207,9 +219,9 @@ where pressure = (select max(pressure) from ${main_data})
 
 <Details title='About This Chart'>
 
-This chart shows atmospheric pressure averaged in 30-minute intervals, providing a smoother view of pressure trends over time.
+This chart plots one point per hour from the aggregated registry.
 
-- Each point represents the average of all readings within a 30-minute period
+- Each point represents the average of all readings within that hour
 - The reference line shows standard sea level pressure (1013.25 hPa)
 - Rising pressure generally indicates improving weather
 - Falling pressure often signals deteriorating weather conditions
@@ -227,8 +239,9 @@ SELECT
   round(avg(pressure), 1) as avg_pressure
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
   AND pressure IS NOT NULL
+  AND pressure between 300 and 1100
 GROUP BY day
 ORDER BY day
 ```

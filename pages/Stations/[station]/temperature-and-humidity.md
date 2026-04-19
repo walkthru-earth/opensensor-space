@@ -40,15 +40,55 @@ where station_id = '${params.station}'
 
 ## Temperature and Humidity Summary
 
+```sql data_quality
+-- Detect damaged BME280 readings in the selected range.
+-- Temperature operating range is -40 to 85 degrees Celsius.
+-- Humidity is physically bounded 0 to 100 percent.
+select
+  count(*) as total_rows,
+  sum(case
+    when temperature < -40 or temperature > 85
+      or humidity < 0 or humidity > 100
+    then 1 else 0 end) as damaged_rows,
+  round(100.0 * sum(case
+    when temperature < -40 or temperature > 85
+      or humidity < 0 or humidity > 100
+    then 1 else 0 end) / nullif(count(*), 0), 1) as damaged_pct,
+  strftime(min(case
+    when temperature < -40 or temperature > 85
+      or humidity < 0 or humidity > 100
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as first_damaged,
+  strftime(max(case
+    when temperature < -40 or temperature > 85
+      or humidity < 0 or humidity > 100
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as last_damaged
+from all_stations
+where station_id = '${params.station}'
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and (temperature is not null or humidity is not null)
+```
+
+{#if data_quality[0].damaged_rows > 0}
+<Alert status="warning">
+
+**BME280 sensor fault detected.** {data_quality[0].damaged_rows} of {data_quality[0].total_rows} hourly readings in this range ({data_quality[0].damaged_pct}%) look damaged, temperature outside -40 to 85 degrees C or humidity outside 0 to 100 percent. First flagged reading {data_quality[0].first_damaged}, last {data_quality[0].last_damaged}. These readings are excluded from the charts and averages below.
+
+</Alert>
+{/if}
+
 ```sql main_data
--- Get all the base data we need in a single scan
+-- Get all the base data we need in a single scan, filtering out damaged rows.
+-- Damaged signature: BME280 temperature outside -40 to 85 C, or humidity
+-- outside 0 to 100 percent (physically impossible).
 select
   timestamp,
   temperature,
   humidity
 from all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
 ```
 
 ```sql temp_summary
@@ -61,8 +101,8 @@ select
     when avg(temperature) > 25 then 'bg-red-50'
     else 'bg-green-50'
   end as temp_bg_color,
-  round(min(temperature), 1) || ' - ' || round(max(temperature), 1) || '°C' as temp_range,
-  'Avg: ' || round(avg(temperature), 1) || '°C' as temp_avg
+  concat_ws(' ', coalesce(min_temp::varchar, '—'), '-', coalesce(max_temp::varchar, '—'), '°C') as temp_range,
+  'Avg: ' || coalesce(avg_temp::varchar, '—') || '°C' as temp_avg
 from ${main_data}
 ```
 
@@ -76,8 +116,8 @@ select
     when avg(humidity) > 60 then 'bg-blue-50'
     else 'bg-green-50'
   end as humidity_bg_color,
-  round(min(humidity), 1) || ' - ' || round(max(humidity), 1) || '%' as humidity_range,
-  'Avg: ' || round(avg(humidity), 1) || '%' as humidity_avg
+  concat_ws(' ', coalesce(min_humidity::varchar, '—'), '-', coalesce(max_humidity::varchar, '—'), '%') as humidity_range,
+  'Avg: ' || coalesce(avg_humidity::varchar, '—') || '%' as humidity_avg
 from ${main_data}
 ```
 
@@ -121,7 +161,9 @@ SELECT
   round(avg(humidity), 1) as humidity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -187,48 +229,38 @@ This chart shows the average temperature and humidity for each hour of the day, 
 ## Key Weather Metrics
 
 ```sql time_series_data
--- Format data for the time series chart (30-minute intervals)
-WITH time_buckets AS (
-  SELECT
-    timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as timestamp,
-    -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE
-      WHEN EXTRACT(MINUTE FROM timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) < 30
-      THEN date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
-      ELSE date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)) + INTERVAL '30 minutes'
-    END AS half_hour_timestamp,
-    temperature,
-    humidity
-  FROM all_stations
-  WHERE station_id = '${params.station}'
-    AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
-)
-
+-- all_stations is already hourly-averaged, so select directly.
 SELECT
-  half_hour_timestamp,
-  round(avg(temperature), 1) as value,
+  timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as local_timestamp,
+  temperature as value,
   'Temperature' as metric_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
 
 UNION ALL
 
 SELECT
-  half_hour_timestamp,
-  round(avg(humidity), 1) as value,
+  timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) as local_timestamp,
+  humidity as value,
   'Humidity' as metric_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-ORDER BY half_hour_timestamp, metric_type
+FROM all_stations
+WHERE station_id = '${params.station}'
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
+ORDER BY local_timestamp, metric_type
 ```
 
 <LineChart
   data={time_series_data}
-  x=half_hour_timestamp
+  x=local_timestamp
   y=value
   series=metric_type
   title="Temperature and Humidity Over Time"
-  subtitle="30-minute average readings over the selected date range"
+  subtitle="Hourly average readings over the selected date range"
   chartAreaHeight=250
   lineWidth=2
   markers=true
@@ -269,7 +301,9 @@ SELECT
   END as time_of_day
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
 GROUP BY
   date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)),
   extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
@@ -324,8 +358,10 @@ SELECT
   round(avg(humidity), 1) as avg_humidity
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
   AND (temperature IS NOT NULL OR humidity IS NOT NULL)
+  AND coalesce(temperature, 0) between -40 and 85
+  AND coalesce(humidity, 0) between 0 and 100
 GROUP BY day
 ORDER BY day
 ```

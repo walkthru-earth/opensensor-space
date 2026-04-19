@@ -12,12 +12,13 @@ SELECT * FROM station_registry WHERE station_id = '${params.station}'
 
 <Details title='About this dashboard'>
 
-This dashboard analyzes gas sensor readings (Oxidised, Reducing, NH3) from **{station_info[0].station_name}**. Units are typically kΩ (kiloohms), representing sensor resistance.
+This dashboard analyzes gas sensor readings (Oxidised, Reducing, NH3) from **{station_info[0].station_name}**. Units are kΩ (kiloohms), representing MICS-6814 sensor resistance.
 
-**Important Interpretation Guidelines:**
-- Lower resistance values often indicate higher gas concentrations
-- Each gas sensor has different sensitivity characteristics
-- Sudden changes in readings may indicate environmental events
+**Important interpretation guidelines:**
+- Lower resistance values often indicate higher gas concentrations.
+- Each gas sensor has different sensitivity characteristics.
+- Sudden changes in readings may indicate environmental events.
+- MICS-6814 baselines drift per device and per install, so the absolute thresholds on this page are rough guidance only. Comparing a day against this station's own baseline tells you more than any fixed kΩ threshold.
 
 **Station Info:**
 - **Location**: {station_info[0].latitude}, {station_info[0].longitude}
@@ -46,8 +47,49 @@ where station_id = '${params.station}'
 
 ## Gas Sensor Readings Summary
 
+```sql data_quality
+-- Detect damaged MICS-6814 readings in the selected range.
+-- Signature: negative resistance (impossible) or above ~10,000 kΩ
+-- (open-circuit / saturation; even heavily aged sensors stay well below).
+select
+  count(*) as total_rows,
+  sum(case
+    when oxidised < 0 or oxidised > 10000
+      or reducing < 0 or reducing > 10000
+      or nh3 < 0 or nh3 > 10000
+    then 1 else 0 end) as damaged_rows,
+  round(100.0 * sum(case
+    when oxidised < 0 or oxidised > 10000
+      or reducing < 0 or reducing > 10000
+      or nh3 < 0 or nh3 > 10000
+    then 1 else 0 end) / nullif(count(*), 0), 1) as damaged_pct,
+  strftime(min(case
+    when oxidised < 0 or oxidised > 10000
+      or reducing < 0 or reducing > 10000
+      or nh3 < 0 or nh3 > 10000
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as first_damaged,
+  strftime(max(case
+    when oxidised < 0 or oxidised > 10000
+      or reducing < 0 or reducing > 10000
+      or nh3 < 0 or nh3 > 10000
+    then timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp) end)::TIMESTAMP, '%Y-%m-%d %H:%M') as last_damaged
+from all_stations
+where station_id = '${params.station}'
+  and timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  and (oxidised is not null or reducing is not null or nh3 is not null)
+```
+
+{#if data_quality[0].damaged_rows > 0}
+<Alert status="warning">
+
+**Gas sensor fault detected.** {data_quality[0].damaged_rows} of {data_quality[0].total_rows} hourly readings in this range ({data_quality[0].damaged_pct}%) look damaged, MICS-6814 resistance came back negative or pegged above the usable range (10,000 kΩ). First flagged reading {data_quality[0].first_damaged}, last {data_quality[0].last_damaged}. These readings are excluded from the charts and averages below.
+
+</Alert>
+{/if}
+
 ```sql main_data
--- Get all the base gas sensor data we need
+-- Get all the base gas sensor data we need, filtering out damaged rows.
+-- Damaged signature: any MICS-6814 channel below 0 or above 10,000 kΩ.
 select
   timestamp,
   oxidised,
@@ -55,7 +97,10 @@ select
   nh3
 from all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(oxidised, 0) between 0 and 10000
+  AND coalesce(reducing, 0) between 0 and 10000
+  AND coalesce(nh3, 0) between 0 and 10000
 ```
 
 ```sql summary_stats
@@ -69,12 +114,17 @@ select
   round(min(nh3), 1) as min_nh3,
   round(max(nh3), 1) as max_nh3,
   round(avg(nh3), 1) as avg_nh3,
-  min_oxidised || ' - ' || max_oxidised || ' kΩ' as oxidised_range,
-  'Avg: ' || avg_oxidised || ' kΩ' as oxidised_avg,
-  min_reducing || ' - ' || max_reducing || ' kΩ' as reducing_range,
-  'Avg: ' || avg_reducing || ' kΩ' as reducing_avg,
-  min_nh3 || ' - ' || max_nh3 || ' kΩ' as nh3_range,
-  'Avg: ' || avg_nh3 || ' kΩ' as nh3_avg,
+  -- concat_ws returns '' for NULL args, preventing the tile from going blank
+  -- when a sensor stream is missing.
+  concat_ws(' ', coalesce(min_oxidised::varchar, '—'), '-', coalesce(max_oxidised::varchar, '—'), 'kΩ') as oxidised_range,
+  'Avg: ' || coalesce(avg_oxidised::varchar, '—') || ' kΩ' as oxidised_avg,
+  concat_ws(' ', coalesce(min_reducing::varchar, '—'), '-', coalesce(max_reducing::varchar, '—'), 'kΩ') as reducing_range,
+  'Avg: ' || coalesce(avg_reducing::varchar, '—') || ' kΩ' as reducing_avg,
+  concat_ws(' ', coalesce(min_nh3::varchar, '—'), '-', coalesce(max_nh3::varchar, '—'), 'kΩ') as nh3_range,
+  'Avg: ' || coalesce(avg_nh3::varchar, '—') || ' kΩ' as nh3_avg,
+  -- Threshold colors below use rough published guidance for MICS-6814.
+  -- Sensor baselines drift per device and install, so treat absolute kΩ
+  -- thresholds as station-specific hints, not calibrated alerts.
   CASE
     WHEN avg_oxidised < 10 THEN 'bg-red-50'
     WHEN avg_oxidised < 15 THEN 'bg-yellow-50'
@@ -126,7 +176,10 @@ SELECT
   round(avg(nh3), 1) as nh3
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
+  AND coalesce(oxidised, 0) between 0 and 10000
+  AND coalesce(reducing, 0) between 0 and 10000
+  AND coalesce(nh3, 0) between 0 and 10000
 GROUP BY hour_of_day
 ORDER BY hour_of_day
 ```
@@ -198,56 +251,22 @@ Lower resistance values (kΩ) generally indicate higher gas concentrations.
 ## Time Series Analysis
 
 ```sql time_series_data
--- Format data for the time series chart (30-minute intervals)
-WITH time_buckets AS (
-  SELECT
-    timestamp,
-    -- Create 30-minute buckets by flooring to the hour and adding 0 or 30 minutes
-    CASE
-      WHEN EXTRACT(MINUTE FROM timestamp) < 30
-      THEN date_trunc('hour', timestamp)
-      ELSE date_trunc('hour', timestamp) + INTERVAL '30 minutes'
-    END AS half_hour_timestamp,
-    oxidised,
-    reducing,
-    nh3
-  FROM ${main_data}
-)
-
-SELECT
-  half_hour_timestamp,
-  round(avg(oxidised), 1) as value,
-  'Oxidised' as gas_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-
+-- all_stations is already hourly-averaged, so select directly.
+SELECT timestamp, oxidised as value, 'Oxidised' as gas_type FROM ${main_data}
 UNION ALL
-
-SELECT
-  half_hour_timestamp,
-  round(avg(reducing), 1) as value,
-  'Reducing' as gas_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-
+SELECT timestamp, reducing as value, 'Reducing' as gas_type FROM ${main_data}
 UNION ALL
-
-SELECT
-  half_hour_timestamp,
-  round(avg(nh3), 1) as value,
-  'NH3' as gas_type
-FROM time_buckets
-GROUP BY half_hour_timestamp
-ORDER BY half_hour_timestamp, gas_type
+SELECT timestamp, nh3 as value, 'NH3' as gas_type FROM ${main_data}
+ORDER BY timestamp, gas_type
 ```
 
 <LineChart
   data={time_series_data}
-  x=half_hour_timestamp
+  x=timestamp
   y=value
   series=gas_type
-  title="Gas Sensor Readings Over Time (30-min intervals)"
-  subtitle="Average values in 30-minute buckets for smoother visualization"
+  title="Gas Sensor Readings Over Time"
+  subtitle="Hourly averages across the selected date range"
   yAxisTitle="Resistance (kΩ)"
   chartAreaHeight=250
   lineWidth=3
@@ -270,11 +289,10 @@ ORDER BY half_hour_timestamp, gas_type
 
 <Details title='About This Chart'>
 
-This chart shows gas sensor readings averaged in 30-minute intervals, providing a smoother view of gas level trends over time.
+This chart plots one point per hour from the aggregated registry.
 
-- Each point represents the average of all readings within a 30-minute period
-- Lower resistance values (kΩ) indicate higher gas concentrations
-- Reference lines show thresholds where gas levels may be of concern (Oxidised gases below 10 kΩ, Reducing gases below 750 kΩ, NH3 below 25 kΩ)
+- Lower resistance values (kΩ) indicate higher gas concentrations.
+- Reference lines are rough guidance only; MICS-6814 baselines drift per device and per install, so "concerning" values vary by station. Compare a day to this station's own baseline rather than to absolute thresholds.
 
 Use the zoom control at the bottom to focus on specific time periods of interest.
 
@@ -299,8 +317,11 @@ SELECT
   END as time_of_day
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
+  AND coalesce(oxidised, 0) between 0 and 10000
+  AND coalesce(reducing, 0) between 0 and 10000
+  AND coalesce(nh3, 0) between 0 and 10000
 GROUP BY
   date_trunc('hour', timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)),
   extract('hour' from timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp))
@@ -366,8 +387,11 @@ SELECT
   round(avg(nh3), 1) as avg_nh3
 FROM all_stations
 WHERE station_id = '${params.station}'
-  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date
+  AND timezone('${Intl.DateTimeFormat().resolvedOptions().timeZone}', timestamp)::date between '${inputs.date_filter.start}'::date and '${inputs.date_filter.end}'::date + INTERVAL '1 day'
   AND (oxidised IS NOT NULL OR reducing IS NOT NULL OR nh3 IS NOT NULL)
+  AND coalesce(oxidised, 0) between 0 and 10000
+  AND coalesce(reducing, 0) between 0 and 10000
+  AND coalesce(nh3, 0) between 0 and 10000
 GROUP BY day
 ORDER BY day
 ```
