@@ -3,7 +3,27 @@ title: System Health
 ---
 
 ```sql station_info
-SELECT * FROM station_registry WHERE station_id = '${params.station}'
+-- Health telemetry is a sibling of the sensor data: swap `enviroplus/` for
+-- `enviroplus-health/` in storage_url. We target the 15-minute bucket from
+-- ~3 hours ago, not "now": stations can be a couple of hours late uploading,
+-- and the file's day=YYYY partition matches the UTC day the file was created,
+-- not wall-clock now. Three hours of lookback lets us land on a file that
+-- actually exists in almost all cases. When no data matches the page still
+-- shows a graceful "No data" alert. Trade-off: data is never newer than ~3 h.
+SELECT
+  *,
+  replace(
+    replace(storage_url, 's3://', 'https://s3.us-west-2.amazonaws.com/'),
+    '/enviroplus/',
+    '/enviroplus-health/'
+  )
+    || 'year=' || year((current_timestamp AT TIME ZONE 'UTC') - INTERVAL '3 hours')::int::varchar
+    || '/month=' || lpad(month((current_timestamp AT TIME ZONE 'UTC') - INTERVAL '3 hours')::int::varchar, 2, '0')
+    || '/day=' || lpad(day((current_timestamp AT TIME ZONE 'UTC') - INTERVAL '3 hours')::int::varchar, 2, '0')
+    || '/health_' || lpad(hour((current_timestamp AT TIME ZONE 'UTC') - INTERVAL '3 hours')::int::varchar, 2, '0')
+    || lpad((floor(minute((current_timestamp AT TIME ZONE 'UTC') - INTERVAL '3 hours') / 15) * 15)::int::varchar, 2, '0')
+    || '.parquet' as health_parquet_url
+FROM station_registry WHERE station_id = '${params.station}'
 ```
 
 # {station_info[0].station_name} - System Health
@@ -14,9 +34,14 @@ SELECT * FROM station_registry WHERE station_id = '${params.station}'
 
 This dashboard monitors the device health of **{station_info[0].station_name}**. It tracks CPU temperature, system load, memory usage, disk space, and network connectivity.
 
+Not every station publishes health telemetry, so this page may show "No data" for stations that only stream environmental readings.
+
 </Details>
 
 ```sql raw_data
+-- Read the single 15-minute health parquet that station_info pointed at
+-- (already time-shifted 2 hours to tolerate upload delay and the file
+-- day-partition lag around UTC midnight).
 SELECT
   timestamp,
   cpu_temp_c,
@@ -34,11 +59,8 @@ SELECT
   uptime_seconds,
   clock_synced,
   cpu_voltage_v,
-  throttled_hex,
-  -- Estimated power consumption (W) for Raspberry Pi
-  -- Base: 0.8W idle + load factor + temp factor
-  round(0.8 + (cpu_load_1min * 1.2) + ((cpu_temp_c - 35) * 0.02), 2) as est_power_w
-FROM read_parquet('https://s3.us-west-2.amazonaws.com/us-west-2.opendata.source.coop/walkthru-earth/opensensor-space/enviroplus-health/station=${params.station}/year=${new Date().getUTCFullYear()}/month=${String(new Date().getUTCMonth() + 1).padStart(2, "0")}/day=${String(new Date().getUTCDate()).padStart(2, "0")}/health_${String(new Date().getUTCHours()).padStart(2, "0")}${String((m => m < 15 ? 0 : Math.floor(m / 15) * 15)(new Date().getUTCMinutes())).padStart(2, "0")}.parquet')
+  throttled_hex
+FROM read_parquet('${station_info[0].health_parquet_url}')
 ORDER BY timestamp
 ```
 
@@ -51,7 +73,6 @@ SELECT
   round(avg(disk_percent_used), 1) as avg_disk,
   round(avg(wifi_signal_dbm), 0) as avg_wifi,
   max(uptime_seconds) / 3600.0 as uptime_hours,
-  round(avg(est_power_w), 2) as avg_power_w,
   round(avg(cpu_voltage_v), 3) as avg_voltage
 FROM ${raw_data}
 ```
@@ -138,20 +159,9 @@ FROM ${raw_data}
   />
 </Grid>
 
-## Power & Voltage
+## CPU Voltage
 
-<Grid cols=3>
-  <BigValue
-    data={raw_data}
-    value=est_power_w
-    title="Est. Power (W)"
-    fmt="num2"
-    sparkline=timestamp
-    sparklineType=area
-    description="Estimated consumption"
-    emptySet="pass"
-    emptyMessage="No data"
-  />
+<Grid cols=1>
   <BigValue
     data={raw_data}
     value=cpu_voltage_v
@@ -159,16 +169,7 @@ FROM ${raw_data}
     fmt="num3"
     sparkline=timestamp
     sparklineType=area
-    description="Core voltage"
-    emptySet="pass"
-    emptyMessage="No data"
-  />
-  <BigValue
-    data={latest_health}
-    value=avg_power_w
-    title="Avg Power (W)"
-    fmt="num2"
-    description="Period average"
+    description="Core voltage, typical 0.8 to 1.4 V"
     emptySet="pass"
     emptyMessage="No data"
   />
@@ -182,7 +183,6 @@ SELECT
   round(avg(cpu_temp_c), 1) as "CPU Temp (°C)",
   round(avg(cpu_load_1min), 2) as "Load (1m)",
   round(avg(memory_percent_used), 1) as "Memory (%)",
-  round(avg(est_power_w), 2) as "Power (W)",
   round(avg(cpu_voltage_v), 3) as "Voltage (V)"
 FROM ${raw_data}
 GROUP BY 1
@@ -214,27 +214,18 @@ ORDER BY minute
 <LineChart
   data={minute_data}
   x=minute
-  y={['Power (W)']}
-  y2={['Voltage (V)']}
-  title="Power Consumption & Voltage"
+  y={['Voltage (V)']}
+  title="CPU Voltage"
   xFmt="HH:mm"
   chartAreaHeight=200
   emptySet="pass"
   emptyMessage="No data available"
 />
 
-<Details title='About Power Estimation'>
-
-Power consumption is estimated using the formula: **Base (0.8W) + CPU Load Factor + Temperature Factor**
-
-This provides an approximation for Raspberry Pi devices. Actual consumption may vary based on peripherals, WiFi activity, and sensor usage.
-
-</Details>
-
 {:else}
 
 <Alert status="warning">
-  No health data available for this station in the current time window. Data updates every 15 minutes.
+  No health data available for this station in the current 15-minute window. Not every contributor publishes device health, so this may also mean the station streams environmental readings only.
 </Alert>
 
 {/if}
